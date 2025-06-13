@@ -6,6 +6,7 @@ import { TabLabels } from '../tab-labels'; // đường dẫn có thể là './t
   templateUrl: 'tab1.page.html',
   styleUrls: ['tab1.page.scss'],
   standalone: false,
+  
 })
 export class Tab1Page {
   tab1 = TabLabels.tab1;
