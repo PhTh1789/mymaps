@@ -1,6 +1,5 @@
 import { Component } from '@angular/core';
 import { TabLabels } from '../tab-labels';
-import { BaseLayoutComponent } from '../base-layout/base-layout.component';
 import { IonicModule } from '@ionic/angular';
 import { FormsModule } from '@angular/forms'; 
 
@@ -12,7 +11,6 @@ import { FormsModule } from '@angular/forms';
   imports: [
     IonicModule, 
     FormsModule, 
-    BaseLayoutComponent
   ],
 })
 export class TabsPage {

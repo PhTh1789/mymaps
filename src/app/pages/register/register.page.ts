@@ -3,7 +3,7 @@ import { IonicModule } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
-import { AuthService } from 'src/app/services/auth.service';
+import { AuthService } from '../../services/auth.service';  
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
@@ -23,6 +23,7 @@ export class RegisterPage {
 
   constructor(private authService: AuthService, private router: Router) {}
 
+  // Nút đăng ký
   onSubmit() {
     this.submitted = true;
     this.registerError = '';
@@ -57,9 +58,11 @@ export class RegisterPage {
       password: this.password
     };
 
+    //Lấy hành động từ authService
     this.authService.register(payload).subscribe({
       next: (res) => {
         alert('Đăng ký tài khoản thành công!');
+        localStorage.setItem('user_email', this.email)
         this.router.navigate(['/login']);
       },
       error: (err: HttpErrorResponse) => {

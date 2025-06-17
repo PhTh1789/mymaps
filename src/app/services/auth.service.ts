@@ -2,39 +2,61 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject, tap } from 'rxjs';
 
+// Khởi tạo ứng dụng
 @Injectable({
   providedIn: 'root',
 })
+
 export class AuthService {
   private apiUrl = 'https://mymaps-app.onrender.com/';
-  private tokenKey = 'auth_token';
-  private tokenSubject = new BehaviorSubject<string | null>(this.getToken());
 
+  //Trạng thái đăng nhập của loggedIn sẽ là false từ ban đầu khi chưa đăng nhập
   private loggedIn = new BehaviorSubject<boolean>(false);
+
+  //Cho phép các component bên ngoài subcrise
   isLoggedIn$ = this.loggedIn.asObservable();
 
+  //Lưu biến username
   private username = new BehaviorSubject<string | null>(null);
   username$ = this.username.asObservable();
 
+  //Cho phép các component bên ngoài subcrise
   private userId = new BehaviorSubject<string | null>(null);
   userId$ = this.userId.asObservable();
 
+  //Lưu biến avatar vào localstorage
+  private avatarUrlSubject = new BehaviorSubject<string | null>(localStorage.getItem('user_avatar'));
+  avatarUrl$ = this.avatarUrlSubject.asObservable();
 
+  //Khởi tạo khi vừa thực hiện
   constructor(private http: HttpClient) {
     const savedLogin = localStorage.getItem('loggedIn') === 'true';
     this.loggedIn.next(savedLogin);
 
-    const savedUsername = localStorage.getItem('username');
-    if (savedUsername) {
-      this.username.next(savedUsername);
-    }
-
-    // Khởi tạo token từ localStorage khi service được tạo
-    const savedToken = localStorage.getItem(this.tokenKey);
-    if (savedToken) {
-      this.tokenSubject.next(savedToken);
-    }
+    this.initializeUserInfo(); // Load thông tin khi service khởi tạo
   }
+
+  //Lấy thông tin từ localStorage
+  initializeUserInfo(): void {
+    const savedUserId = localStorage.getItem('userId');
+    const savedUsername = localStorage.getItem('username');
+    const savedAvatar = localStorage.getItem('user_avatar');
+
+    if (savedUserId) this.userId.next(savedUserId);
+    if (savedUsername) this.username.next(savedUsername);
+    if (savedAvatar) this.avatarUrlSubject.next(savedAvatar);
+  }
+
+  //Cập nhật avatar
+  setAvatarUrl(url: string | null): void {
+    if (url) {
+      localStorage.setItem('user_avatar', url);
+    } else {
+      localStorage.removeItem('user_avatar');
+    }
+    this.avatarUrlSubject.next(url);
+  }
+
 
   getIsLoggedIn(): boolean {
     return this.loggedIn.value;
@@ -43,10 +65,30 @@ export class AuthService {
   getUsername(): string | null {
     return this.username.value;
   }
+
   getUserId(): string | null {
     return this.userId.value;
   }
 
+  //Lưu thông tin người dùng
+  setUserInfo(userId: string, username: string): void {
+    this.userId.next(userId);
+    this.username.next(username);
+    localStorage.setItem('userId', userId);
+    localStorage.setItem('username', username);
+  }
+
+  //Làm mới thông tin người dùng từ LocalStorage
+  refreshUserInfoFromStorage(): void {
+    const userId = localStorage.getItem('userId') || '';
+    const username = localStorage.getItem('username') || '';
+    const avatar = localStorage.getItem('user_avatar') || '';
+
+    this.setUserInfo(userId, username);
+    this.setAvatarUrl(avatar);
+  }
+
+  //Gửi thông tin đăng ký
   register(data: { username: string; email: string; password: string }): Observable<any> {
     const body = new URLSearchParams();
     body.set('user_name', data.username);
@@ -61,6 +103,7 @@ export class AuthService {
     return this.http.post(`${this.apiUrl}user/signin`, body.toString(), { headers });
   }
 
+  //Gửi thông tin đăng nhập
   login(credentials: { username: string; password: string }): Observable<any> {
     const body = new URLSearchParams();
     body.set('username', credentials.username);
@@ -75,27 +118,54 @@ export class AuthService {
       tap((response: any) => {
         if (response && response.access_token) {
           localStorage.setItem('loggedIn', 'true');
-          localStorage.setItem('username', credentials.username);
           localStorage.setItem('access_token', response.access_token);
-
           this.loggedIn.next(true);
-          this.username.next(credentials.username);
-          this.userId.next(response.user_id);
-          this.setToken(response.access_token);
+
+          // Gọi API /users/me để lấy thông tin người dùng chi tiết
+          const authHeaders = new HttpHeaders({
+            'Authorization': `Bearer ${response.access_token}`,
+            'Accept': 'application/json'
+          });
+
+          this.http.get<any>(`${this.apiUrl}users/me`, { headers: authHeaders }).subscribe({
+            next: (res) => {
+              localStorage.setItem('userId', res.user_id);
+              localStorage.setItem('username', res.username);
+              localStorage.setItem('user_email', res.user_email || '');
+              localStorage.setItem('user_phone', res.user_phone || '');
+              localStorage.setItem('user_avatar', res.avatar || '');
+
+              this.setUserInfo(res.user_id, res.username);
+              this.setAvatarUrl(res.avatar || null);
+            },
+            error: (err) => {
+              console.error('Lỗi khi gọi /users/me:', err);
+            }
+          });
         }
       })
     );
   }
 
-  logout(): void {
-    localStorage.removeItem('loggedIn');
-    localStorage.removeItem('username');
-    localStorage.removeItem('access_token');
 
-    this.loggedIn.next(false);
-    this.username.next(null);
-    this.removeToken();
-  }
+  //Đăng xuất và xóa thông tin khỏi localStorage
+  logout(): void {
+  // Xóa tất cả các key liên quan
+  localStorage.removeItem('loggedIn');
+  localStorage.removeItem('username');
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('user_avatar');
+  localStorage.removeItem('user_email');
+  localStorage.removeItem('user_phone');
+  localStorage.removeItem('displayName');
+
+  // Reset các BehaviorSubject về null/false
+  this.loggedIn.next(false);
+  this.username.next(null);
+  this.userId.next(null);
+  this.avatarUrlSubject.next(null);
+}
 
   getAccessToken(): string | null {
     return localStorage.getItem('access_token');
@@ -109,11 +179,13 @@ export class AuthService {
     });
   }
 
+  // Cập nhật trạng thái Login
   setLoginStatus(status: boolean): void {
     this.loggedIn.next(status);
     localStorage.setItem('loggedIn', status.toString());
   }
 
+  // Cập nhật trạng thái username
   setUsername(username: string | null): void {
     this.username.next(username);
     if (username) {
@@ -121,32 +193,5 @@ export class AuthService {
     } else {
       localStorage.removeItem('username');
     }
-  }
-
-  // Lấy token hiện tại
-  getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
-  }
-
-  // Lưu token mới
-  setToken(token: string): void {
-    localStorage.setItem(this.tokenKey, token);
-    this.tokenSubject.next(token);
-  }
-
-  // Xóa token
-  removeToken(): void {
-    localStorage.removeItem(this.tokenKey);
-    this.tokenSubject.next(null);
-  }
-
-  // Observable để theo dõi thay đổi của token
-  getTokenObservable(): Observable<string | null> {
-    return this.tokenSubject.asObservable();
-  }
-
-  // Kiểm tra xem người dùng đã đăng nhập chưa
-  isAuthenticated(): boolean {
-    return !!this.getToken();
   }
 }

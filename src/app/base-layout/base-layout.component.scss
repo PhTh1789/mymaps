@@ -1,6 +1,6 @@
 .custom-avatar {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   overflow: hidden;
   cursor: pointer;
@@ -9,9 +9,13 @@
   align-items: center;
   transition: transform 0.2s ease;
 
+  &:hover {
+    transform: scale(1.05);
+  }
+
   img {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     object-fit: cover;
   }

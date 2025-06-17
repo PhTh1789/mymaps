@@ -38,7 +38,7 @@ export class MapService {
   // Lấy headers
   private getHeaders(): HttpHeaders {
     // Lấy token từ service authentication
-    const token = this.authService.getToken();
+    const token = this.authService.getAccessToken();
     // Nếu không có token thì báo lỗi
     if (!token) {
       throw new Error('Không có token');

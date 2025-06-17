@@ -3,6 +3,7 @@
     <form id="form" (ngSubmit)="onSubmit()" #form="ngForm">
       <h1 class="form-title">Đăng ký tài khoản</h1>
 
+      <!-- [ngClass] giống class scss, [ngModel] dùng dữ liệu 2 chiều -->
       <div class="input-control" [ngClass]="{ 'error': submitted && !username }">
         <label for="username">Tên người dùng</label>
         <input id="username" name="username" type="text" [(ngModel)]="username" required />

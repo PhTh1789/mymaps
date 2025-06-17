@@ -1,5 +1,20 @@
 <ion-header [translucent]="true">
+  <div class="search-container">
+    <!-- mở/tắt cái menu -->
+    <ion-avatar class="menu-avatar" (click)="openMenu()">
+      <img src="assets/img/avatar.jpg" />
+    </ion-avatar>
+    <ion-searchbar
+      [(ngModel)]="searchQuery"
+      (ionInput)="onSearchChange($event)"
+      (ionClear)="clearSearch()"
+      placeholder="Tìm kiếm bản đồ của bạn..."
+      animated="true"
+      showCancelButton="focus">
+    </ion-searchbar>
+  </div>
 
+  <!-- Segment cho tất cả, tôi tạo, được chia sẻ -->
   <ion-toolbar>
 
     <ion-segment [(ngModel)]="segmentValue" (ionChange)="segmentChanged($event)">

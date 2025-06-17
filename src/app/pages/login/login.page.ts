@@ -19,21 +19,29 @@ import { IonicModule } from '@ionic/angular';
     IonicModule,
   ],
 })
+
+//Không dùng implement OnInit vì tài khoản chỉ đăng nhập rồi xài
 export class LoginPage {
+
+  // Khai báo kiểu dữ liệu
   username: string = '';
   password: string = '';
   loginError: string = '';
   submitted = false;
 
+  //Thực hiện lệnh khi được khởi tạo
   constructor(
-    private router: Router,
+    private router: Router, // Thực hiện lệnh ở class mà gọi import
     private authService: AuthService
   ) {}
 
+
+  //Nút nhấn đăng nhập
   onSubmit() {
     this.submitted = true;
     this.loginError = '';
 
+    // Nếu thiếu 2 in 1 thì thông báo lỗi
     if (!this.username || !this.password) {
       this.loginError = 'Vui lòng nhập đầy đủ tài khoản và mật khẩu.';
       return;
@@ -46,15 +54,15 @@ export class LoginPage {
 
     this.authService.login(loginData).subscribe({
       next: (res: any) => {
-        // ✅ Kiểm tra token
+        // Kiểm tra token
         if (res.access_token) {
           alert('Đăng nhập thành công!');
 
-          // ✅ Lưu trạng thái login
+          // Lưu trạng thái login
           this.authService.setLoginStatus(true);
           this.authService.setUsername(this.username);
 
-          // ✅ Điều hướng
+          // Điều hướng
           this.router.navigate(['/tabs']);
         } else {
           this.loginError = 'Đăng nhập không thành công.';

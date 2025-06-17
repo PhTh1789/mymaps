@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { AlertController, LoadingController } from '@ionic/angular';
+import { AlertController, LoadingController, NavController, IonicModule, MenuController } from '@ionic/angular';
+import { DocumentService, DocumentSummary } from '../services/document.service';
 import { MapService, MapItem, CreateMapRequest } from '../services/map.service';
 import { AuthService } from '../services/auth.service';
 
@@ -11,10 +13,12 @@ import { AuthService } from '../services/auth.service';
   standalone: false,
 })
 export class Tab2Page implements OnInit {
-
+  files: DocumentSummary[] = [];
+  filteredFiles: DocumentSummary[] = [];
+  searchQuery: string = '';
+  showSuggestions: boolean = false;
 
   segmentValue: string = 'all';
-  searchQuery: string = '';
   maps: MapItem[] = [];           // Danh sách bản đồ gốc
   filteredMaps: MapItem[] = [];   // Danh sách bản đồ đã lọc
 
@@ -24,6 +28,10 @@ export class Tab2Page implements OnInit {
 
   // Khởi tạo service
   constructor(
+    private navCtrl: NavController,
+    private documentService: DocumentService,
+    private menu: MenuController,
+    
     private formBuilder: FormBuilder,
     private alertController: AlertController,
     private mapService: MapService,
@@ -43,6 +51,11 @@ export class Tab2Page implements OnInit {
   ngOnInit() {
     // Tải danh sách bản đồ
     this.loadMaps();
+    this.filterMaps();
+    this.segmentChanged(this.segmentValue);
+    this.openMenu();
+    this.onSearchChange(this.searchQuery);
+    this.clearSearch();
   }
 
   loadMaps() {
@@ -136,5 +149,36 @@ export class Tab2Page implements OnInit {
   segmentChanged(event: any) {
     this.segmentValue = event.detail.value;
     this.filterMaps();
+  }
+
+  onSearchChange(event: any) {
+    this.searchQuery = event.detail.value.toLowerCase();
+    this.showSuggestions = this.searchQuery.length > 0; // khi nhập từ khóa showSuggestions = true -> hiển thị danh sách gợi ý
+    // lọc kết quả tìm kiếm bằng tên của tài liệu hoặc tên chủ sở hữu tài liệu
+    this.filteredFiles = this.files.filter(file =>
+      file.map_name.toLowerCase().includes(this.searchQuery) ||
+      file.user_name.toLowerCase().includes(this.searchQuery)
+    );
+  }
+
+// hàm chọn vào mục trong danh sách gợi ý
+// khi chọn, truyền vào file cấu trúc của tài liệu đã chọn
+// ẩn danh sách gợi ý(false) hiển thị tên tài liệu được chọn trong thanh tìm kiếm
+//  cô lập và hiển thị duy nhất(file) tài liệu được chọn vào phần content
+  selectSuggestion(file: DocumentSummary) {
+    this.searchQuery = file.map_name;
+    this.showSuggestions = false;
+    this.filteredFiles = [file];
+  }
+// xóa thành tìm kiếm và trả phần content về ban đầu
+  clearSearch() {
+    this.searchQuery = '';
+    this.showSuggestions = false;
+    this.filteredFiles = this.files;
+  }
+  
+  openMenu() {
+    this.menu.enable(true, 'main-menu');
+    this.menu.open('main-menu');
   }
 }

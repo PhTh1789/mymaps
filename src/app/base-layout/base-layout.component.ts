@@ -8,12 +8,18 @@ import { IonicModule, MenuController } from '@ionic/angular'; // Đảm bảo im
   styleUrls: ['./base-layout.component.scss'],
   imports: [IonicModule]
 })
+
 export class BaseLayoutComponent {
   @Input() title: string = '';
+  avatarUrl: string | null = null;
   
   constructor(
     private menu: MenuController,
   ) {};
+
+  ngOnInit() {
+    this.avatarUrl = localStorage.getItem('user_avatar');
+  }
 
   openMenu() {
     this.menu.enable(true, 'main-menu'); 

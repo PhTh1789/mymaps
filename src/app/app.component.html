@@ -7,13 +7,16 @@
         <ion-list id="inbox-list">
 
           <!-- Thông tin người dùng -->
-          <ion-item lines="none">
+          <ion-item lines="none" *ngIf="isLoggedIn">
+            <ion-avatar slot="start">
+              <img [src]="avatarUrl || 'assets/img/avatar.jpg'" alt="avatar">
+            </ion-avatar>
             <ion-label>
-              <h2 *ngIf="isLoggedIn">Tên người dùng</h2>
-              <p *ngIf="isLoggedIn">ID Người dùng</p>
-              <h2 *ngIf="!isLoggedIn">Khách</h2>
+              <h2>{{ username }}</h2>
+              
             </ion-label>
           </ion-item>
+
 
           <!-- Danh sách các mục trong menu -->
           <ion-menu-toggle auto-hide="false" *ngFor="let p of appPages; trackBy: trackByFn">

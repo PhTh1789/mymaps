@@ -1,10 +1,10 @@
 import { Component } from '@angular/core';
-import { BaseLayoutComponent } from 'src/app/base-layout/base-layout.component';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, ModalController } from '@ionic/angular';
 import { FormsModule } from '@angular/forms';
 import { AlertController, NavController, ToastController } from '@ionic/angular';
 import { HttpClient } from '@angular/common/http';
-import { AuthService } from 'src/app/services/auth.service';
+import { AuthService } from '../../services/auth.service';
+import { AboutUsComponent } from '../../about-us/about-us.component';
 
 @Component({
   selector: 'app-settings',
@@ -14,10 +14,9 @@ import { AuthService } from 'src/app/services/auth.service';
   imports: [
     IonicModule,
     FormsModule,
-    BaseLayoutComponent
   ]
 })
-export class SettingsPage{
+export class SettingsPage {
   notificationsEnabled = true;
   selectedLanguage = 'vi';
 
@@ -27,69 +26,79 @@ export class SettingsPage{
     private navCtrl: NavController,
     private toastCtrl: ToastController,
     private authService: AuthService,
+    private modalCtrl: ModalController
   ) {}
 
-    async confirmDeleteAccount() {
-      const alert = await this.alertCtrl.create({
-        header: 'Xác nhận',
-        message: 'Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.',
-        buttons: [
-          {
-            text: 'Hủy',
-            role: 'cancel'
-          },
-          {
-            text: 'Xóa',
-            handler: () => this.deleteAccount()
-          }
-        ]
+  async confirmDeleteAccount() {
+    const alert = await this.alertCtrl.create({
+      header: 'Xác nhận',
+      message: 'Bạn có chắc chắn muốn xóa tài khoản? Hành động này không thể hoàn tác.',
+      buttons: [
+        {
+          text: 'Hủy',
+          role: 'cancel'
+        },
+        {
+          text: 'Xóa',
+          handler: () => this.deleteAccount()
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  async deleteAccount() {
+    const token = this.authService.getAccessToken();
+
+    if (!token) {
+      const toast = await this.toastCtrl.create({
+        message: 'Không tìm thấy token. Vui lòng đăng nhập lại.',
+        duration: 2000,
+        color: 'danger'
       });
-
-      await alert.present();
+      await toast.present();
+      return;
     }
 
-    async deleteAccount() {
-      const token = this.authService.getAccessToken(); // Sửa lại tên hàm
+    try {
+      await this.http.delete(`https://mymaps-app.onrender.com/users/delete`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }).toPromise();
 
-      if (!token) {
-        const toast = await this.toastCtrl.create({
-          message: 'Không tìm thấy token. Vui lòng đăng nhập lại.',
-          duration: 2000,
-          color: 'danger'
-        });
-        await toast.present();
-        return;
-      }
+      this.authService.logout();
 
-      try {
-        await this.http.delete(`https://mymaps-app.onrender.com/users/delete`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }).toPromise();
+      const toast = await this.toastCtrl.create({
+        message: 'Tài khoản đã bị xóa thành công.',
+        duration: 2000,
+        color: 'success'
+      });
+      await toast.present();
 
-        // Xóa dữ liệu localStorage và reset trạng thái AuthService
-        this.authService.logout();
+      this.navCtrl.navigateRoot('/login');
 
-        const toast = await this.toastCtrl.create({
-          message: 'Tài khoản đã bị xóa thành công.',
-          duration: 2000,
-          color: 'success'
-        });
-        await toast.present();
-
-        this.navCtrl.navigateRoot('/login');
-
-      } catch (error: any) {
-        console.error('Lỗi xóa tài khoản:', error);
-        const message = error?.error?.message || 'Lỗi khi xóa tài khoản. Vui lòng thử lại.';
-        const toast = await this.toastCtrl.create({
-          message,
-          duration: 2000,
-          color: 'danger'
-        });
-        await toast.present();
-      }
+    } catch (error: any) {
+      console.error('Lỗi xóa tài khoản:', error);
+      const message = error?.error?.message || 'Lỗi khi xóa tài khoản. Vui lòng thử lại.';
+      const toast = await this.toastCtrl.create({
+        message,
+        duration: 2000,
+        color: 'danger'
+      });
+      await toast.present();
     }
+  }
 
+  editProfile() {
+    this.navCtrl.navigateForward('/profile');
+  }
+
+  async openAboutUsModal() {
+    const modal = await this.modalCtrl.create({
+      component: AboutUsComponent
+    });
+    await modal.present();
+  }
 }
