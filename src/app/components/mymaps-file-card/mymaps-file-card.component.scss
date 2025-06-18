@@ -2,89 +2,81 @@
 .file-card-container {
     background-color: rgb(239, 240, 222);
     border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
     display: flex;
     position: relative;
-    border: 2px solid rgb(147, 183, 183);
-    height: 100px; //chiều cao của thẻ
-  }
-  // review bản đồ(mẫu)
-  .map-box {
+    border: 2px solid #d7d7d7;
+    height: 120px; 
+    align-items: center;
+}
+
+// review bản đồ(mẫu)
+.map-box {
     width: 75px;
     height: 75px;
     background-color: rgb(103, 96, 96);
-    border-radius: 4px;
-    margin-right: 12px;
-  }
-  // tên, người tạo, ngày tạo
-  .file-info {
+    border: 2px solid #d7d7d7;
+    border-radius: 5px;
+    margin-right: 16px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+// tên, mô tả, ngày tạo
+.file-info {
     flex: 1;
-    padding: 12px 12px 12px 0;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: center;
+    height: 100%;
 }
 
 // phần hiển thị tên
 .title-section {
+    margin-bottom: 8px;
     h3 {
-        margin: 0;
-        font-size: 1.1em;
-        font-weight: 600;
-        color: #2c3e50;
-        line-height: 1.3;
-        display: -webkit-box;
-        -webkit-line-clamp: 1;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
+      margin: 0;
+      font-size: 1.05em;
+      color: #222;
+      line-height: 1.3;
+      font-weight: 700;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: normal;
+      max-width: 100%;
+      padding-right: 8px;
     }
 }
 
 // phần hiển thị  người tạo, ngày tạo
 .details-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
     p {
-        margin: 4px 0;
-        font-size: 0.9em;
-        color: #666;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        
-        &:last-child {
-            color: #888;
-            font-size: 0.85em;
-            margin-top: 8px;
-        }
+      margin: 0;
+      font-size: 13px;
+      color: #444;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    p:nth-child(2) {
+      margin-top: 2px;
+      color: #888;
+      font-size: 12px;
     }
 }
 
-//nút download
-.download-btn {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
-    border: 1px solid #333;
-    border-radius: 6px;
-    box-shadow: 0 2px 6px rgba(59, 178, 246, 0.15);
-    margin-right: 4px;
-    transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
-    cursor: pointer;
-    padding: 0;
-}
-
-.download-icon {
-    color: #111;
-    font-size: 1.2em;
-}
-
-
-
+// nút xóa
 .delete-map-btn {
     position: absolute;
     top: 8px;
@@ -122,6 +114,7 @@
     }
 }
 
+// nút public
 .public-map-btn {
     position: absolute;
     top: 8px;

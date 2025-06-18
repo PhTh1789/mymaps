@@ -26,11 +26,6 @@ const routes: Routes = [
       }
     ]
   },
-  {
-    path: '',
-    redirectTo: 'tab1',
-    pathMatch: 'full'
-  }
 ];
 
 @NgModule({
