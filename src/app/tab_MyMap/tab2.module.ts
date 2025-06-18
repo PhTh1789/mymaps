@@ -7,7 +7,7 @@ import { ExploreContainerComponentModule } from '../explore-container/explore-co
 import { HttpClientModule } from '@angular/common/http';
 
 import { Tab2PageRoutingModule } from './tab2-routing.module';
-import { FileCardModule } from '../components/file-card/file-card.module';
+import { MymapsFileCardModule } from '../components/mymaps-file-card/mymaps-file-card.module';
 
 @NgModule({
   imports: [
@@ -18,7 +18,7 @@ import { FileCardModule } from '../components/file-card/file-card.module';
     ExploreContainerComponentModule,
     Tab2PageRoutingModule,
     HttpClientModule,
-    FileCardModule
+    MymapsFileCardModule
   ],
   declarations: [Tab2Page]
 })

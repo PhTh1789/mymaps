@@ -72,7 +72,7 @@ export class DocumentService {
     return this.http.get<MapPoint[]>(`https://mymaps-app.onrender.com/map/${map_id}`, { headers });
   }
 
-  // Hàm đẩy map từ template qua explore
+  // Hàm đẩy map từ template qua mymaps
   importTemplate(map_id: number): Observable<any> {
     const headers = this.authService.getAuthHeaders();
     return this.http.post<any>(`https://mymaps-app.onrender.com/template/import/${map_id}`, {}, { headers });

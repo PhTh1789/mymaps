@@ -79,10 +79,10 @@ export class Tab2Page implements OnInit {
   filterMaps() {
     switch (this.segmentValue) {
       case 'created':
-        this.filteredMaps = this.maps.filter(map => map.user_id === this.authService.getUserId());
+        this.filteredMaps = this.maps.filter(map => !map.name.startsWith('Copy of '));
         break;
       case 'shared':
-        this.filteredMaps = this.maps.filter(map => map.user_id !== this.authService.getUserId());
+        this.filteredMaps = this.maps.filter(map => map.name.startsWith('Copy of '));
         break;
       default:
         this.filteredMaps = [...this.maps];

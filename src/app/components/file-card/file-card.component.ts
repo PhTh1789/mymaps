@@ -26,7 +26,6 @@ export class FileCardComponent {
   @Output() cardClick = new EventEmitter<string>();  // đầu ra của sự kiện cardclick, phát ra chuỗi ký tự id
   hasLiked: boolean = false; // biến để kiểm tra người dùng đã like chưa
   hasDisliked: boolean = false; // biến để kiểm tra người dùng đã dislike chưa
-  abc: any;
 
   constructor(
     private documentService: DocumentService,
