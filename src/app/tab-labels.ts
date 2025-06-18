@@ -1,5 +1,5 @@
 export const TabLabels = {
-  tab1: 'Explore',
-  tab2: 'My Map',
-  tab3: 'Template'
+  tab1: 'Khám phá',
+  tab2: 'Bản đồ của tôi',
+  tab3: 'Mẫu'
 };

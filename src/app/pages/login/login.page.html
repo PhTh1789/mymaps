@@ -22,12 +22,7 @@
       <div class="signup-button">
         <ion-button expand="block" type="submit">ĐĂNG NHẬP</ion-button>
       </div>
-
-      <!-- Thông báo lỗi khác -->
-      <div *ngIf="loginError" class="error text-center" style="margin-top: 10px;">
-        {{ loginError }}
-      </div>
-
+      
       <!-- Link đăng ký -->
       <div class="text-center">
         <p>Bạn chưa có tài khoản? <a [routerLink]="['/register']">Đăng ký</a></p>

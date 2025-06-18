@@ -43,7 +43,7 @@ export class LoginPage {
 
     // Nếu thiếu 2 in 1 thì thông báo lỗi
     if (!this.username || !this.password) {
-      this.loginError = 'Vui lòng nhập đầy đủ tài khoản và mật khẩu.';
+      this.loginError = 'Vui lòng điền đầy đủ tài khoản mật khẩu';
       return;
     }
 
@@ -56,8 +56,6 @@ export class LoginPage {
       next: (res: any) => {
         // Kiểm tra token
         if (res.access_token) {
-          alert('Đăng nhập thành công!');
-
           // Lưu trạng thái login
           this.authService.setLoginStatus(true);
           this.authService.setUsername(this.username);
@@ -65,12 +63,12 @@ export class LoginPage {
           // Điều hướng
           this.router.navigate(['/tabs']);
         } else {
-          this.loginError = 'Đăng nhập không thành công.';
+          this.loginError = 'Đăng nhập thất bại';
         }
       },
       error: (error: HttpErrorResponse) => {
-        console.error('Login failed:', error);
-        this.loginError = error.error?.detail || 'Tài khoản hoặc mật khẩu không đúng!';
+        console.error('Đăng nhập thất bại:', error);
+        this.loginError = error.error?.detail || 'Tài khoản hoặc mật khẩu không đúng';
         alert(this.loginError);
       }
     });
