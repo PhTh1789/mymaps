@@ -1,0 +1,40 @@
+<div class="main-header">
+  <ion-card>
+    <form id="form" (ngSubmit)="onSubmit()" #form="ngForm">
+      <h1 class="form-title">Đăng ký tài khoản</h1>
+
+      <!-- [ngClass] giống class scss, [ngModel] dùng dữ liệu 2 chiều -->
+      <div class="input-control" [ngClass]="{ 'error': submitted && !username }">
+        <label for="username">Tên người dùng</label>
+        <input id="username" name="username" type="text" [(ngModel)]="username" required />
+        <div class="error" *ngIf="submitted && !username">Tên người dùng là bắt buộc</div>
+      </div>
+
+      <div class="input-control" [ngClass]="{ 'error': submitted && !isValidEmail(email) }">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="text" [(ngModel)]="email" required />
+        <div class="error" *ngIf="submitted && !isValidEmail(email)">Email không hợp lệ</div>
+      </div>
+
+      <div class="input-control" [ngClass]="{ 'error': submitted && password.length < 8 }">
+        <label for="password">Mật khẩu</label>
+        <input id="password" name="password" type="password" [(ngModel)]="password" required />
+        <div class="error" *ngIf="submitted && password.length < 8">Mật khẩu phải có ít nhất 8 ký tự</div>
+      </div>
+
+      <div class="input-control" [ngClass]="{ 'error': submitted && password !== password2 }">
+        <label for="password2">Nhập lại mật khẩu</label>
+        <input id="password2" name="password2" type="password" [(ngModel)]="password2" required />
+        <div class="error" *ngIf="submitted && password !== password2">Mật khẩu không trùng nhau</div>
+      </div>
+
+      <div class="signup-button">
+        <ion-button type="submit">ĐĂNG KÝ</ion-button>
+      </div>
+
+      <div class="text-center">
+        <p>Bạn đã có sẵn tài khoản? <a [routerLink]="['/login']">Đăng nhập</a></p>
+      </div>
+    </form>
+  </ion-card>
+</div>
