@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AlertController, NavController, ToastController } from '@ionic/angular';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
-import { AboutUsComponent } from '../../about-us/about-us.component';
+import { AboutUsComponent } from '../../components/about-us/about-us.component';
 
 @Component({
   selector: 'app-settings',

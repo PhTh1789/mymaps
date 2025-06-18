@@ -152,6 +152,21 @@
     }
 }
 
+// Trạng thái public/private cho nút share
+.public-map-btn.shared {
+  background: #e0e0e0 !important;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  ion-icon {
+    color: #888 !important;
+  }
+}
+.public-map-btn.not-shared {
+  background: #fff !important;
+  ion-icon {
+    color: #007aff !important;
+  }
+}
+
 // Thêm trạng thái disabled cho các nút
 .delete-map-btn[disabled],
 .public-map-btn[disabled] {

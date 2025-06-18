@@ -23,6 +23,7 @@ export class AppComponent implements OnInit, OnDestroy {
   appPages: any[] = [];
   username: string | null = null;
   userId: string | null = null;
+  showMenuButton = false;
 
   private subscriptions: Subscription[] = [];
 
@@ -98,6 +99,7 @@ export class AppComponent implements OnInit, OnDestroy {
           this.isLoggedIn = status;
           this.updateMenu();
           this.cdr.detectChanges();
+          this.showMenuButton = status && this.router.url.startsWith('/tabs');
         }),
 
       this.authService.username$.subscribe(name => {
@@ -120,6 +122,12 @@ export class AppComponent implements OnInit, OnDestroy {
     if (this.authService.getIsLoggedIn()) {
       this.authService.refreshUserInfoFromStorage();
     }
+
+    // Theo dõi thay đổi route để cập nhật showMenuButton
+    this.router.events.subscribe(() => {
+      this.showMenuButton = this.isLoggedIn && this.router.url.startsWith('/tabs');
+      this.cdr.detectChanges();
+    });
   }
 
   ngOnDestroy(): void {
@@ -137,10 +145,10 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  logout() {
-    this.menu.close().then(() => {
-      this.authService.logout();
-      this.router.navigate(['/login']);
-    });
-  }
+  // logout() {
+  //   this.menu.close().then(() => {
+  //   this.authService.logout();
+  //   this.router.navigate(['/login']);
+  //   });
+  // }
 }

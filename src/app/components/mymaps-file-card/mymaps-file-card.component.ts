@@ -15,6 +15,7 @@ export class MymapsFileCardComponent  {
   @Input() file: any;
   @Output() cardClick = new EventEmitter<string>();
   @Output() deleted = new EventEmitter<void>();
+  @Output() reloadTabs = new EventEmitter<void>();
 
   isDeleting = false;
   isPublishing = false;
@@ -26,6 +27,11 @@ export class MymapsFileCardComponent  {
     private mapShareService: MapShareService,
     
   ) { }
+
+  ngOnInit() {
+    // Trạng thái public: shared = 1 (đã public, tối màu), shared = 0 (private, sáng màu)
+    this.isShared = this.file?.shared === 1;
+  }
 
   // khi click vào thẻ, sẽ chuyển đến trang explore và hiển thị bản đồ
   onClickCard() {
@@ -72,23 +78,47 @@ export class MymapsFileCardComponent  {
     }
   }
 
-  onPublicMap(event: Event) {
+  onShareMap(event: Event) {
     event.stopPropagation();
-    if (this.file && this.file.map_id && !this.isShared) {
-      if (confirm('Bạn có chắc muốn public bản đồ này?')) {
-        this.isPublishing = true;
-        this.mapService.publicMap(this.file.map_id).subscribe({
-          next: () => {
-            this.isPublishing = false;
-            this.isShared = true;
-            alert('Public bản đồ thành công!');
-          },
-          error: (err) => {
-            this.isPublishing = false;
-            alert('Public bản đồ thất bại!');
-            console.error('Lỗi public bản đồ:', err);
-          }
-        });
+    if (this.file && this.file.map_id) {
+      if (!this.isShared) {
+        // Nếu chưa public, gọi toPublicMap
+        if (confirm('Bạn có chắc muốn public bản đồ này?')) {
+          this.isPublishing = true;
+          this.mapService.toPublicMap(this.file.map_id).subscribe({
+            next: () => {
+              this.isPublishing = false;
+              this.isShared = true;
+              this.file.shared = 1; // cập nhật trạng thái file
+              alert('Public bản đồ thành công!');
+              this.reloadTabs.emit();
+            },
+            error: (err) => {
+              this.isPublishing = false;
+              alert('Public bản đồ thất bại!');
+              console.error('Lỗi public bản đồ:', err);
+            }
+          });
+        }
+      } else {
+        // Nếu đã public, gọi toPrivateMap
+        if (confirm('Bạn có chắc muốn chuyển bản đồ về private?')) {
+          this.isPublishing = true;
+          this.mapService.toPrivateMap(this.file.map_id).subscribe({
+            next: () => {
+              this.isPublishing = false;
+              this.isShared = false;
+              this.file.shared = 0; // cập nhật trạng thái file
+              alert('Chuyển bản đồ về private thành công!');
+              this.reloadTabs.emit();
+            },
+            error: (err) => {
+              this.isPublishing = false;
+              alert('Chuyển bản đồ về private thất bại!');
+              console.error('Lỗi chuyển về private:', err);
+            }
+          });
+        }
       }
     }
   }

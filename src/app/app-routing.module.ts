@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
+import { BaseLayoutComponent } from './components/base-layout/base-layout.component';
 
 const routes: Routes = [
   {
@@ -7,10 +8,7 @@ const routes: Routes = [
     redirectTo: 'intro',
     pathMatch: 'full'
   },
-  {
-    path: 'tabs',
-    loadChildren: () => import('./tabs/tabs.module').then(m => m.TabsPageModule)
-  },
+  // Các route không dùng MenuBar (intro, login, register)
   {
     path: 'login',
     loadChildren: () => import('./pages/login/login.module').then( m => m.LoginPageModule)
@@ -20,19 +18,28 @@ const routes: Routes = [
     loadChildren: () => import('./pages/register/register.module').then( m => m.RegisterPageModule)
   },
   {
-    path: 'settings',
-    loadChildren: () => import('./pages/settings/settings.module').then( m => m.SettingsPageModule)
-  },
-  {
-    path: 'profile',
-    loadChildren: () => import('./pages/profile/profile.module').then( m => m.ProfilePageModule)
-  },
-  {
     path: 'intro',
     loadChildren: () => import('./pages/intro/intro.module').then( m => m.IntroPageModule)
   },
-
-
+  // Các route dùng MenuBar
+  {
+    path: '',
+    component: BaseLayoutComponent,
+    children: [
+      {
+        path: 'tabs',
+        loadChildren: () => import('./tabs/tabs.module').then(m => m.TabsPageModule)
+      },
+      {
+        path: 'settings',
+        loadChildren: () => import('./pages/settings/settings.module').then( m => m.SettingsPageModule)
+      },
+      {
+        path: 'profile',
+        loadChildren: () => import('./pages/profile/profile.module').then( m => m.ProfilePageModule)
+      }
+    ]
+  }
 ];
 @NgModule({
   imports: [

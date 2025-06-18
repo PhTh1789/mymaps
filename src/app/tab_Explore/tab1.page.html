@@ -23,4 +23,44 @@
 
 <ion-content [fullscreen]="true">
   <div id="map" style="width: 100%; height: 100%;"></div>
+  
+  <!-- Thông báo khi chưa chọn map -->
+  <div *ngIf="!selectedMapId" class="map-selection-notice">
+    <ion-card>
+      <ion-card-content>
+        <ion-icon name="information-circle-outline" color="primary"></ion-icon>
+        <p>Vui lòng chọn một bản đồ từ tab "My Map" để có thể tạo điểm mới</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+  
+  <!-- Thông báo khi đã chọn map -->
+  <div *ngIf="selectedMapId" class="map-selected-notice">
+    <ion-card color="success">
+      <ion-card-content>
+        <ion-icon name="checkmark-circle-outline" color="success"></ion-icon>
+        <p>Đã chọn bản đồ. Bạn có thể click vào bản đồ để tạo điểm mới</p>
+      </ion-card-content>
+    </ion-card>
+  </div>
+  
+  <ion-modal *ngIf="showPointForm" [isOpen]="showPointForm" (didDismiss)="closePointForm()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Tạo Điểm Mới</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closePointForm()">Đóng</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding">
+        <app-point-form
+          [geom]="selectedGeom || ''"
+          [loading]="loadingPoint"
+          (submitPoint)="onSubmitPoint($event)">
+        </app-point-form>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 </ion-content>

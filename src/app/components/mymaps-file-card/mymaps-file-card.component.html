@@ -13,8 +13,14 @@
   
   </button>
 
-  <!-- Nút public map -->
-  <button class="public-map-btn" (click)="onPublicMap($event)" title="Public bản đồ" [disabled]="isPublishing || isShared">
+  <!-- Nút public/private map -->
+  <button 
+    class="public-map-btn" 
+    (click)="onShareMap($event)"
+    title="{{ isShared ? 'Chuyển về private' : 'Public bản đồ' }}"
+    [disabled]="isPublishing"
+    [ngClass]="{ 'shared': isShared, 'not-shared': !isShared }"
+  >
     <ng-container *ngIf="!isPublishing">
       <ion-icon name="share-social-outline"></ion-icon>
     </ng-container>

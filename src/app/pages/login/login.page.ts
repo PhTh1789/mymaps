@@ -34,10 +34,7 @@ export class LoginPage {
     private router: Router, // Thực hiện lệnh ở class mà gọi import
     private authService: AuthService
   ) {
-    // Nếu đã đăng nhập thì chuyển hướng sang /tabs
-    if (this.authService.getIsLoggedIn()) {
-      this.router.navigate(['/tabs']);
-    }
+    // Đã xóa logic tự động chuyển hướng sang /tabs nếu đã đăng nhập
   }
 
 

@@ -1,11 +1,13 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { TabsPage } from './tabs.page';
+import { introBlockGuard } from '../services/intro-block.guard';
 
 const routes: Routes = [
   {
     path: '',
     component: TabsPage,
+    canActivate: [introBlockGuard],
     children: [
       {
         path: 'tab1',
@@ -22,6 +24,11 @@ const routes: Routes = [
       {
         path: '',
         redirectTo: 'tab1', // ĂN theo chỗ này
+        pathMatch: 'full'
+      },
+      {
+        path: '',
+        redirectTo: 'tab1', 
         pathMatch: 'full'
       }
     ]
