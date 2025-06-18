@@ -73,10 +73,23 @@ export class MapService {
         if (mapData.description) formData.append('description', mapData.description);
         if (mapData.category) formData.append('category', mapData.category);
         if (mapData.image) formData.append('image', mapData.image);
-        formData.append('shared', 'false');
-
+  
         return this.http.post(this.createMapUrl, formData, { headers });
       })
     );
+  }
+
+  // Xóa bản đồ
+  deleteMap(mapId: string): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `https://mymaps-app.onrender.com/map/delete_map?map_id=${mapId}`;
+    return this.http.delete(url, { headers });
+  }
+
+  // Thêm phương thức public map
+  publicMap(mapId: string): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `https://mymaps-app.onrender.com/template/to_public?map_id=${mapId}`;
+    return this.http.post(url, { map_id: mapId }, { headers });
   }
 }

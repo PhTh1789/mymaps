@@ -5,6 +5,7 @@ import { AlertController, LoadingController, NavController, IonicModule, MenuCon
 import { DocumentService, DocumentSummary } from '../services/document.service';
 import { MapService, MapItem, CreateMapRequest } from '../services/map.service';
 import { AuthService } from '../services/auth.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-tab2',
@@ -36,7 +37,8 @@ export class Tab2Page implements OnInit {
     private alertController: AlertController,
     private mapService: MapService,
     private loadingController: LoadingController,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {
     // Khởi tạo form
     this.createMapForm = this.formBuilder.group({
@@ -49,28 +51,22 @@ export class Tab2Page implements OnInit {
 
   // ngOnInit chỉ chạy 1 lần duy nhất khi component được khởi tạo
   ngOnInit() {
-    // Tải danh sách bản đồ
     this.loadMaps();
-    this.filterMaps();
-    this.segmentChanged(this.segmentValue);
-    this.openMenu();
-    this.onSearchChange(this.searchQuery);
-    this.clearSearch();
-  }
+    }
 
   loadMaps() {
     const userId = this.authService.getUserId();
-    console.log('UserId:', userId); // Log userId
-
+    if (!userId) {
+      // Có thể thử lại sau 100ms hoặc show thông báo
+      setTimeout(() => this.loadMaps(), 100);
+      return;
+    }
     this.mapService.getMaps().subscribe({
-      // Khi có dữ liệu
       next: (data) => {
         this.maps = data;
-        console.log('Dữ liệu maps:', this.maps); // <-- Thêm dòng này để kiểm tra
-        this.filterMaps(); // Lọc maps dựa trên segment hiện tại
+        this.filterMaps();
       },
       error: (error) => {
-        console.error('Error loading maps:', error);
         this.showAlert('Lỗi', 'Không thể tải danh sách bản đồ');
       }
     });
@@ -79,10 +75,10 @@ export class Tab2Page implements OnInit {
   filterMaps() {
     switch (this.segmentValue) {
       case 'created':
-        this.filteredMaps = this.maps.filter(map => map.user_id === this.authService.getUserId());
+        this.filteredMaps = this.maps.filter(map => !map.name.startsWith('Copy of '));
         break;
       case 'shared':
-        this.filteredMaps = this.maps.filter(map => map.user_id !== this.authService.getUserId());
+        this.filteredMaps = this.maps.filter(map => map.name.startsWith('Copy of '));
         break;
       default:
         this.filteredMaps = [...this.maps];
