@@ -9,18 +9,18 @@
     </div>
     <div class="details-section">
       <p>{{ truncateText( file?.description ) }}</p>
-      <p>owner: {{ file?.user_name }}</p>
+      <p>Nguồn: {{ file?.user_name }}</p>
     </div>
   </div>
   <div class="like-dislike-group">
     <button class="download-btn" (click)="onImportTemplate($event)">
-      <ion-icon class="download-icon" name="download-outline" style="color: #111;"></ion-icon>
+      <ion-icon class="download-icon" src="../assets/icon/download.svg"></ion-icon>
     </button>
     <button class="like-btn" (click)="onLike(); $event.stopPropagation()"> <!-- stopPropagation không để nhiều sự kiện xảy ra khi click -->
-      <ion-icon src="../assets/icon/like-icon.svg"></ion-icon> {{ file?.like }}
+      <ion-icon name="thumbs-up"></ion-icon> {{ file?.like }}
     </button>
     <button class="dislike-btn" (click)="onDislike(); $event.stopPropagation()">
-      <ion-icon src=""></ion-icon> {{ file?.dislike }} 
+      <ion-icon name="thumbs-down"></ion-icon> {{ file?.dislike }} 
     </button>
   </div>
 </div>
