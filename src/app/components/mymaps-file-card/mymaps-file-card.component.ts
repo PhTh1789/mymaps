@@ -18,6 +18,7 @@ export class MymapsFileCardComponent  {
 
   isDeleting = false;
   isPublishing = false;
+  isShared = false;
 
   constructor(
     private navCtrl: NavController,
@@ -73,12 +74,13 @@ export class MymapsFileCardComponent  {
 
   onPublicMap(event: Event) {
     event.stopPropagation();
-    if (this.file && this.file.map_id) {
+    if (this.file && this.file.map_id && !this.isShared) {
       if (confirm('Bạn có chắc muốn public bản đồ này?')) {
         this.isPublishing = true;
         this.mapService.publicMap(this.file.map_id).subscribe({
           next: () => {
             this.isPublishing = false;
+            this.isShared = true;
             alert('Public bản đồ thành công!');
           },
           error: (err) => {
