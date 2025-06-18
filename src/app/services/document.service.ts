@@ -44,11 +44,6 @@ export class DocumentService {
     return this.http.get<DocumentSummary[]>(`${this.ApiUrl}/get_maps_template`, { headers }); 
   }
 
-// hàm lấy chi tiết từng tại liệu postman
-  //getDocumentDetails(id: string): Observable<any> {
-     //const headers = this.authService.getAuthHeaders();
-     //return this.http.<any>(`${this.mockApiUrl}/import/${template_map_id}`, { headers });
-  //}
   //hàm tăng like cho tài liệu
   upVote(map_id: number): Observable<any> {
     const headers = this.authService.getAuthHeaders(); // token

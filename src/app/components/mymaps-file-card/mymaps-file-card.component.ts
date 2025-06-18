@@ -14,7 +14,10 @@ import { MapService } from '../../services/map.service';
 export class MymapsFileCardComponent  {
   @Input() file: any;
   @Output() cardClick = new EventEmitter<string>();
+  @Output() deleted = new EventEmitter<void>();
 
+  isDeleting = false;
+  isPublishing = false;
 
   constructor(
     private navCtrl: NavController,
@@ -46,6 +49,46 @@ export class MymapsFileCardComponent  {
     if (!text) return '';
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
+  }
+
+  onDeleteMap(event: Event) {
+    event.stopPropagation();
+    if (this.file && this.file.map_id) {
+      if (confirm('Bạn có chắc muốn xóa bản đồ này?')) {
+        this.isDeleting = true;
+        this.mapService.deleteMap(this.file.map_id).subscribe({
+          next: () => {
+            this.isDeleting = false;
+            this.deleted.emit();
+          },
+          error: (err) => {
+            this.isDeleting = false;
+            alert('Xóa bản đồ thất bại!');
+            console.error('Lỗi xóa bản đồ:', err);
+          }
+        });
+      }
+    }
+  }
+
+  onPublicMap(event: Event) {
+    event.stopPropagation();
+    if (this.file && this.file.map_id) {
+      if (confirm('Bạn có chắc muốn public bản đồ này?')) {
+        this.isPublishing = true;
+        this.mapService.publicMap(this.file.map_id).subscribe({
+          next: () => {
+            this.isPublishing = false;
+            alert('Public bản đồ thành công!');
+          },
+          error: (err) => {
+            this.isPublishing = false;
+            alert('Public bản đồ thất bại!');
+            console.error('Lỗi public bản đồ:', err);
+          }
+        });
+      }
+    }
   }
 
 }
