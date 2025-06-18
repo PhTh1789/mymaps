@@ -5,7 +5,6 @@ import { MapShareService } from '../../services/map-share.service';
 import { NavController } from '@ionic/angular';
 import { IonicModule } from '@ionic/angular';
 
-
 interface likeresponse {
   message: string;
   like: number;
@@ -38,7 +37,7 @@ export class FileCardComponent {
   onClickCard() {
     if (this.file && this.file.map_id) {
       this.mapShareService.setMapId(this.file.map_id);
-      this.navCtrl.navigateRoot(['/tabs/explore']);
+      this.navCtrl.navigateRoot(['/tabs/tab1']);
     }
     // Khi thẻ được bấm, phát ra(evenemiter) sự kiện kèm theo ID của tệp
     if (this.file && this.file.id) {
