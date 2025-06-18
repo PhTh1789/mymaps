@@ -32,6 +32,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   searchQuery: string = '';
   searchResults: any[] = [];
   selectedMapId: number | null = null; // id của map đã chọn từ template
+  selectedMapName: string = ''; // Tên của map đang được chọn
   private pointMarkers: L.Marker[] = []; //mảng chứa tất cả marker đang hiển thị
   private mapIdSub?: Subscription;
   selectedGeom: string | null = null;
@@ -55,6 +56,9 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit() {
     this.mapIdSub = this.mapShareService.currentMapId$.subscribe((id) => {
       if (id) {
+        this.selectedMapId = id;
+        this.loadMapName(id);
+        
         this.documentService.getMapPoints(id).subscribe((points) => {
           this.clearPointMarkers();
           let minPoint: any = null;
@@ -231,8 +235,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     // Thêm sự kiện click trên bản đồ để tạo điểm mới
     this.map.on('click', (e: any) => {
       if (!this.selectedMapId) {
-        // Hiển thị thông báo khi chưa chọn map
-        alert('Vui lòng chọn một bản đồ từ tab "My Map" trước khi tạo điểm mới!');
+        // Không làm gì khi chưa chọn map
         return;
       }
       
@@ -417,6 +420,31 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   closePointForm() {
     this.showPointForm = false;
     this.selectedGeom = null;
+  }
+
+  // Lấy tên map từ MapService
+  loadMapName(mapId: number) {
+    this.mapService.getMaps().subscribe({
+      next: (maps: any[]) => {
+        const selectedMap = maps.find(map => map.map_id === mapId);
+        if (selectedMap && selectedMap.name) {
+          this.selectedMapName = selectedMap.name;
+        } else {
+          this.selectedMapName = 'Bản đồ';
+        }
+      },
+      error: (error) => {
+        console.error('Lỗi khi lấy tên map:', error);
+        this.selectedMapName = 'Bản đồ';
+      }
+    });
+  }
+
+  // Hủy chọn map
+  clearSelectedMap() {
+    this.selectedMapId = null;
+    this.selectedMapName = '';
+    this.clearPointMarkers();
   }
 }
 

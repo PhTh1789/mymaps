@@ -77,53 +77,88 @@ ion-header {
     }
 }
 
-// Style cho thông báo chọn map
-.map-selection-notice,
-.map-selected-notice {
+// Style cho nút hiển thị map đang chọn
+.selected-map-button {
     position: absolute;
-    top: 20px;
+    top: 100px; // Đặt gần hơn với searchbar
     left: 20px;
     right: 20px;
     z-index: 1000;
-    max-width: 400px;
+    max-width: 400px; // Gọn hơn
     margin: 0 auto;
     
     ion-card {
         margin: 0;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        border-radius: 20px; // Bo tròn hơn
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        border: none;
+        overflow: hidden; // Đảm bảo gradient không bị tràn
         
         ion-card-content {
             display: flex;
             align-items: center;
-            padding: 12px 16px;
+            padding: 12px 16px; // Gọn hơn
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); // Gradient tím-xanh đẹp
+            position: relative; // Để đặt nút close
             
             ion-icon {
-                font-size: 24px;
+                font-size: 24px; // Nhỏ hơn
                 margin-right: 12px;
                 flex-shrink: 0;
+                color: white; // Icon trắng
             }
             
             p {
                 margin: 0;
-                font-size: 14px;
+                font-size: 14px; // Nhỏ hơn
                 line-height: 1.4;
-                color: var(--ion-color-dark);
+                font-weight: 500;
+                color: white; // Text trắng
+                text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); // Shadow nhẹ cho text
+                flex: 1; // Chiếm hết không gian còn lại
+                
+                strong {
+                    font-weight: 600;
+                    color: #ffeb3b; // Màu vàng cho tên map
+                }
+            }
+            
+            .clear-map-btn {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+                --color: white;
+                --background: rgba(255, 255, 255, 0.2);
+                --border-radius: 50%;
+                width: 28px;
+                height: 28px;
+                margin: 0;
+                
+                &:hover {
+                    --background: rgba(255, 255, 255, 0.3);
+                }
+                
+                ion-icon {
+                    font-size: 16px;
+                    margin: 0;
+                }
             }
         }
     }
 }
 
-.map-selection-notice {
-    ion-card {
-        --background: var(--ion-color-light);
-        --color: var(--ion-color-primary);
-    }
+// Animation cho nút
+.selected-map-button {
+    animation: slideInDown 0.3s ease-out;
 }
 
-.map-selected-notice {
-    ion-card {
-        --background: var(--ion-color-success-tint);
-        --color: var(--ion-color-success);
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-15px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
