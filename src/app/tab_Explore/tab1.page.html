@@ -42,7 +42,7 @@
     </ion-card>
   </div>
   
-  <ion-modal *ngIf="showPointForm" [isOpen]="showPointForm" (didDismiss)="closePointForm()">
+  <ion-modal *ngIf="pointFormServiceInstance.getShowForm()" [isOpen]="pointFormServiceInstance.getShowForm()" (didDismiss)="closePointForm()">
     <ng-template>
       <ion-header>
         <ion-toolbar>
@@ -54,7 +54,7 @@
       </ion-header>
       <ion-content class="ion-padding">
         <app-point-form
-          [geom]="selectedGeom || ''"
+          [geom]="pointFormServiceInstance.getSelectedGeom() || ''"
           [loading]="loadingPoint"
           (submitPoint)="onSubmitPoint($event)">
         </app-point-form>

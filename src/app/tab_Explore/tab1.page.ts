@@ -7,6 +7,7 @@ import { DocumentService } from '../services/document.service';
 import { Subscription } from 'rxjs';
 import { TabLabels } from '../tab-labels';
 import { MapService } from '../services/map.service';
+import { PointFormService } from '../services/point-form.service';
 
 interface SearchResult {
   display_name: string;
@@ -35,16 +36,20 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   selectedMapName: string = ''; // Tên của map đang được chọn
   private pointMarkers: L.Marker[] = []; //mảng chứa tất cả marker đang hiển thị
   private mapIdSub?: Subscription;
-  selectedGeom: string | null = null;
-  showPointForm = false;
   loadingPoint = false;
+
+  // Getter để expose service ra template
+  get pointFormServiceInstance() {
+    return this.pointFormService;
+  }
 
   //khởi tạo menu
   constructor(
     private menuCtrl: MenuController,
     private mapShareService: MapShareService,
     private documentService: DocumentService,
-    private mapService: MapService
+    private mapService: MapService,
+    private pointFormService: PointFormService
   ) {}
   ngAfterViewInit() {
     this.initMap();
@@ -59,60 +64,8 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
         this.selectedMapId = id;
         this.loadMapName(id);
         
-        this.documentService.getMapPoints(id).subscribe((points) => {
-          this.clearPointMarkers();
-          let minPoint: any = null;
-          points.forEach((point) => {
-            const latlng = wkbHexToLatLng(point.geom);
-            if (latlng) {
-              const marker = L.marker([latlng.lat, latlng.lon], {
-                icon: L.icon({
-                  iconUrl: '../assets/icon/location-icon.png',
-                  iconSize: [25, 40],
-                }),
-              }).addTo(this.map).bindPopup(`
-                  <div style="display: flex; align-items: flex-start; width: 280px; padding: 8px;">
-                    <div style="flex: 2; padding: 4px; max-width: 150px;">
-                      <div style="font-size: 1em; font-weight: bold; margin-bottom: 0.25em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        ${
-                          point.name.length > 10
-                            ? point.name.substring(0, 25) + '...'
-                            : point.name
-                        }
-                      </div>
-                      <div style="font-size: 0.8em; color: #222; word-wrap: break-word; max-height: 80px; overflow-y: auto;">
-                        ${
-                          point.description
-                            ? point.description.length > 150
-                              ? point.description.substring(0, 150) + '...'
-                              : point.description
-                            : ''
-                        }
-                      </div>
-                    </div>
-                    <div style="flex: 1; min-width: 100px; max-width: 120px; height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
-                      ${
-                        point.image_url
-                          ? `
-                        <img src="${point.image_url}" 
-                             style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid #222;"
-                             onerror="this.onerror=null; this.src='../assets/default-image.png';"
-                             loading="lazy" />`
-                          : ''
-                      }
-                    </div>
-                  </div>
-                `);
-              this.pointMarkers.push(marker);
-              if (!minPoint || point.point_id < minPoint.point_id) {
-                minPoint = { ...point, ...latlng };
-              }
-            }
-          });
-          if (minPoint) {
-            this.map.setView([minPoint.lat, minPoint.lon], 18);
-          }
-        });
+        // Sử dụng hàm tối ưu để load các điểm
+        this.reloadMapPoints();
       }
     });
   }
@@ -232,7 +185,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     ).addTo(this.map);
     this.addLocationControl();
     this.addTerrainControl();
-    // Thêm sự kiện click trên bản đồ để tạo điểm mới
+    // Thêm sự kiện click trên bản đồ để hiển thị popup tạo điểm
     this.map.on('click', (e: any) => {
       if (!this.selectedMapId) {
         // Không làm gì khi chưa chọn map
@@ -241,8 +194,55 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
       
       const lat = e.latlng.lat;
       const lon = e.latlng.lng;
-      this.selectedGeom = lon + ' ' + lat;
-      this.showPointForm = true;
+      const geom = lon + ' ' + lat;
+      
+      // Tạo popup với thông tin vị trí và nút tạo điểm
+      const popup = L.popup()
+        .setLatLng([lat, lon])
+        .setContent(`
+          <div style="text-align: center; min-width: 200px;">
+            <h4 style="margin: 0 0 10px 0; color: #333;">Vị trí mới</h4>
+            <p style="margin: 5px 0; font-size: 14px;">
+              <strong>Hoành độ:</strong> ${lon.toFixed(6)}
+            </p>
+            <p style="margin: 5px 0; font-size: 14px;">
+              <strong>Tung độ:</strong> ${lat.toFixed(6)}
+            </p>
+            <button 
+              id="createPointBtn" 
+              style="
+                background: #007bff; 
+                color: white; 
+                border: none; 
+                padding: 8px 16px; 
+                border-radius: 4px; 
+                cursor: pointer; 
+                margin-top: 10px;
+                font-size: 14px;
+              "
+              onmouseover="this.style.background='#0056b3'"
+              onmouseout="this.style.background='#007bff'"
+            >
+              Thêm vào ${this.selectedMapName || 'map'}
+            </button>
+          </div>
+        `)
+        .openOn(this.map);
+      
+      // Thêm event listener cho nút tạo điểm
+      setTimeout(() => {
+        const createBtn = document.getElementById('createPointBtn');
+        if (createBtn) {
+          createBtn.addEventListener('click', () => {
+            this.pointFormServiceInstance.showPointForm(
+              this.selectedMapId!, 
+              this.selectedMapName, 
+              geom
+            );
+            this.map.closePopup();
+          });
+        }
+      }, 100);
     });
   }
   //  hàm tạo nút định vị không trả về giá trị (void)
@@ -366,74 +366,142 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   }
   // hàm xóa mảng pointMarkers chứa tất cả điểm trên map
   private clearPointMarkers() {
-    this.pointMarkers.forEach((marker) => this.map.removeLayer(marker));
-    this.pointMarkers = [];
+    if (this.pointMarkers.length > 0) {
+      this.pointMarkers.forEach((marker) => {
+        if (this.map.hasLayer(marker)) {
+          this.map.removeLayer(marker);
+        }
+      });
+      this.pointMarkers = [];
+    }
   }
 
+  // hàm tạo điểm mới
   onSubmitPoint(data: any) {
-    if (!this.selectedMapId || !this.selectedGeom) return;
+    // kiểm tra xem có chọn map và điểm mới không
+    const mapId = this.pointFormServiceInstance.getSelectedMapId();
+    const geom = this.pointFormServiceInstance.getSelectedGeom();
+    
+    if (!mapId || !geom) return;
+    
     this.loadingPoint = true;
-    this.mapService.createPoint(this.selectedMapId.toString(), {
-      map_id: this.selectedMapId.toString(),
+    
+    this.mapService.createPoint(mapId.toString(), {
+      map_id: mapId.toString(),
       name: data.name,
       description: data.description,
       image: data.image,
-      geom: this.selectedGeom
+      geom: geom
     }).subscribe({
       next: () => {
+        // khi tạo điểm mới thành công
         this.loadingPoint = false;
-        this.showPointForm = false;
-        this.selectedGeom = null;
+        this.pointFormServiceInstance.hidePointForm();
+        
         // Reload lại các điểm trên bản đồ
-        if (this.selectedMapId) {
-          this.documentService.getMapPoints(this.selectedMapId).subscribe((points) => {
-            this.clearPointMarkers();
-            let minPoint: any = null;
-            points.forEach((point) => {
-              const latlng = wkbHexToLatLng(point.geom);
-              if (latlng) {
-                const marker = L.marker([latlng.lat, latlng.lon], {
-                  icon: L.icon({
-                    iconUrl: '../assets/icon/location-icon.png',
-                    iconSize: [25, 40],
-                  }),
-                }).addTo(this.map).bindPopup(point.name);
-                this.pointMarkers.push(marker);
-                if (!minPoint || point.point_id < minPoint.point_id) {
-                  minPoint = { ...point, ...latlng };
-                }
-              }
-            });
-            if (minPoint) {
-              this.map.setView([minPoint.lat, minPoint.lon], 18);
-            }
-          });
-        }
+        this.reloadMapPoints();
       },
-      error: () => {
+      error: (error) => {
+        // khi có lỗi
         this.loadingPoint = false;
-        // Có thể hiển thị thông báo lỗi
+        console.error('Lỗi khi tạo điểm:', error);
+        // Có thể thêm thông báo lỗi cho người dùng ở đây
       }
     });
   }
 
-  closePointForm() {
-    this.showPointForm = false;
-    this.selectedGeom = null;
+  // Hàm tối ưu để reload các điểm trên bản đồ
+  private reloadMapPoints() {
+    if (!this.selectedMapId) return;
+    
+    this.documentService.getMapPoints(this.selectedMapId).subscribe((points) => {
+      this.clearPointMarkers();
+      this.addPointsToMap(points);
+    });
   }
 
-  // Lấy tên map từ MapService
+  // Hàm tối ưu để thêm các điểm lên bản đồ
+  private addPointsToMap(points: any[]) {
+    let minPoint: any = null;
+    
+    points.forEach((point) => {
+      const latlng = wkbHexToLatLng(point.geom);
+      if (latlng) {
+        const marker = this.createPointMarker(point, latlng);
+        this.pointMarkers.push(marker);
+        
+        // Tìm điểm có ID nhỏ nhất để làm điểm trung tâm
+        if (!minPoint || point.point_id < minPoint.point_id) {
+          minPoint = { ...point, ...latlng };
+        }
+      }
+    });
+    
+    // Căn giữa map vào điểm gần nhất
+    if (minPoint) {
+      this.map.setView([minPoint.lat, minPoint.lon], 18);
+    }
+  }
+
+  // Hàm tối ưu để tạo marker cho điểm
+  private createPointMarker(point: any, latlng: { lat: number; lon: number }): L.Marker {
+    return L.marker([latlng.lat, latlng.lon], {
+      icon: L.icon({
+        iconUrl: '../assets/icon/location-icon.png',
+        iconSize: [25, 40],
+      }),
+    }).addTo(this.map).bindPopup(this.createPointPopupContent(point));
+  }
+
+  // Hàm tối ưu để tạo nội dung popup cho điểm
+  private createPointPopupContent(point: any): string {
+    const truncatedName = point.name.length > 25 ? point.name.substring(0, 25) + '...' : point.name;
+    const truncatedDescription = point.description && point.description.length > 150 
+      ? point.description.substring(0, 150) + '...' 
+      : point.description || '';
+    
+    const imageHtml = point.image_url 
+      ? `<img src="${point.image_url}" 
+           style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid #222;"
+           onerror="this.onerror=null; this.src='../assets/default-image.png';"
+           loading="lazy" />`
+      : '';
+
+    return `
+      <div style="display: flex; align-items: flex-start; width: 280px; padding: 8px;">
+        <div style="flex: 2; padding: 4px; max-width: 150px;">
+          <div style="font-size: 1em; font-weight: bold; margin-bottom: 0.25em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            ${truncatedName}
+          </div>
+          <div style="font-size: 0.8em; color: #222; word-wrap: break-word; max-height: 80px; overflow-y: auto;">
+            ${truncatedDescription}
+          </div>
+        </div>
+        <div style="flex: 1; min-width: 100px; max-width: 120px; height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+          ${imageHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  // hàm đóng form tạo điểm mới
+  closePointForm() {
+    // ẩn form
+    this.pointFormServiceInstance.hidePointForm();
+  }
+
+  // hàm lấy tên map từ MapService
   loadMapName(mapId: number) {
+    // gọi hàm getMaps() của MapService để lấy danh sách map
     this.mapService.getMaps().subscribe({
       next: (maps: any[]) => {
+        // tìm map có map_id tương ứng với mapId
         const selectedMap = maps.find(map => map.map_id === mapId);
-        if (selectedMap && selectedMap.name) {
-          this.selectedMapName = selectedMap.name;
-        } else {
-          this.selectedMapName = 'Bản đồ';
-        }
+        // kiểm tra xem map có tồn tại và có tên không
+        this.selectedMapName = selectedMap?.name || 'Bản đồ';
       },
       error: (error) => {
+        // nếu có lỗi thì gán tên mặc định
         console.error('Lỗi khi lấy tên map:', error);
         this.selectedMapName = 'Bản đồ';
       }
@@ -442,8 +510,11 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
 
   // Hủy chọn map
   clearSelectedMap() {
+    // xóa id map
     this.selectedMapId = null;
+    // xóa tên map
     this.selectedMapName = '';
+    // xóa tất cả điểm trên map
     this.clearPointMarkers();
   }
 }
