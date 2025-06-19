@@ -22,6 +22,15 @@ export interface CreateMapRequest {
   shared: boolean;
 }
 
+// Interface cho request tạo điểm
+export interface CreatePointRequest {
+  map_id: string;
+  name: string;
+  description?: string | null;
+  image?: File | null;
+  geom: string; // "kinh độ vĩ độ"
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -87,9 +96,29 @@ export class MapService {
   }
 
   // Thêm phương thức public map
-  publicMap(mapId: string): Observable<any> {
+  toPublicMap(mapId: string): Observable<any> {
     const headers = this.getHeaders();
     const url = `https://mymaps-app.onrender.com/template/to_public?map_id=${mapId}`;
     return this.http.post(url, { map_id: mapId }, { headers });
+  }
+
+  // Thêm phương thức chuyển map về private
+  toPrivateMap(mapId: string): Observable<any> {
+    const headers = this.getHeaders();
+    const url = `https://mymaps-app.onrender.com/template/to_private?map_id=${mapId}`;
+    return this.http.post(url, { map_id: mapId }, { headers });
+  }
+
+  // Tạo điểm mới trên bản đồ
+  createPoint(mapID:string,pointData: CreatePointRequest): Observable<any> {
+    const headers = this.getHeaders();
+    const formData = new FormData();
+    formData.append('map_id', mapID);
+    formData.append('name', pointData.name);
+    if (pointData.description) formData.append('description', pointData.description);
+    if (pointData.image) formData.append('image', pointData.image);
+    formData.append('geom', pointData.geom);
+    const url = `https://mymaps-app.onrender.com/map/create_point?map_id=${mapID}`;
+    return this.http.post(url, formData, { headers });
   }
 }

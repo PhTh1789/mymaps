@@ -36,3 +36,18 @@ ion-toolbar {
     margin: 0 8px;
   }
 
+ion-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+#inbox-list {
+  flex: 1 1 auto;
+}
+
+.menu-bottom-buttons {
+  flex-shrink: 0;
+  margin-bottom: 16px;
+}
+

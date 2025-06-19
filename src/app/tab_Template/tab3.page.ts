@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { NavController, IonicModule, MenuController } from '@ionic/angular';
 import { DocumentService, DocumentSummary } from '../services/document.service';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../services/auth.service';
 
 @Component({
   selector: 'app-tab3',
@@ -19,10 +20,12 @@ export class Tab3Page {
   constructor(
     private navCtrl: NavController,
     private documentService: DocumentService,
-    private menu: MenuController
+    private menu: MenuController,
+    private authService: AuthService
   ) {}
 
   ngOnInit() {
+    this.loadMaps();
     // lấy dữ liệu từ API
     this.documentService.getAllDocumentsSummary().subscribe({
       next: (data) => {
@@ -35,6 +38,15 @@ export class Tab3Page {
         console.error('Lỗi khi lấy dữ liệu từ Mock API:', error);
       }
     });
+  }
+
+  loadMaps() {
+    const userId = this.authService.getUserId();
+    if (!userId) {
+      // Có thể thử lại sau 100ms hoặc show thông báo
+      setTimeout(() => this.loadMaps(), 100);
+      return;
+    }
   }
 //hàm cập nhật kết quả tìm kiếm khi nhập từ khóa
   onSearchChange(event: any) {

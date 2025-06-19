@@ -1,30 +1,56 @@
-<div class="main-header">
+<div class="auth-form-container">
   <ion-card>
     <form id="form" (ngSubmit)="onSubmit()" #form="ngForm">
-      <h1 class="form-title">ĐĂNG NHẬP</h1>
+      <h1 class="auth-form-title">ĐĂNG NHẬP</h1>
 
       <!-- Tài khoản -->
-      <div class="input-control">
+      <div class="auth-input-control">
         <label for="username">Tài khoản</label>
-        <input type="text" id="username" name="username" [(ngModel)]="username" required />
+        <input 
+          type="text" 
+          id="username" 
+          name="username" 
+          [(ngModel)]="username" 
+          placeholder="Hãy nhập tài khoản của bạn"
+          required 
+        />
         <div class="error" *ngIf="submitted && !username">Tài khoản không được để trống</div> 
-        <!-- Kiểm tra thử username xem có rỗng không !username -->
       </div>
 
       <!-- Mật khẩu -->
-      <div class="input-control">
+      <div class="auth-input-control">
         <label for="password">Mật khẩu</label>
-        <input id="password" name="password" type="password" [(ngModel)]="password" required />
+        <div class="password-input-container">
+          <input 
+            [type]="showPassword ? 'text' : 'password'"
+            id="password" 
+            name="password" 
+            [(ngModel)]="password" 
+            placeholder="Hãy nhập mật khẩu của bạn"
+            required 
+          />
+          <button 
+            type="button" 
+            class="password-toggle-btn"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'"
+          >
+            <ion-icon 
+              [name]="showPassword ? 'eye-off' : 'eye'"
+              class="password-icon"
+            ></ion-icon>
+          </button>
+        </div>
         <div class="error" *ngIf="submitted && !password">Mật khẩu không được để trống</div>
       </div>
 
       <!-- Nút Đăng nhập -->
-      <div class="signup-button">
+      <div class="auth-button">
         <ion-button expand="block" type="submit">ĐĂNG NHẬP</ion-button>
       </div>
       
       <!-- Link đăng ký -->
-      <div class="text-center">
+      <div class="auth-text-center">
         <p>Bạn chưa có tài khoản? <a [routerLink]="['/register']">Đăng ký</a></p>
       </div>
     </form>

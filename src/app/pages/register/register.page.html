@@ -1,38 +1,97 @@
-<div class="main-header">
+<div class="auth-form-container">
   <ion-card>
     <form id="form" (ngSubmit)="onSubmit()" #form="ngForm">
-      <h1 class="form-title">Đăng ký tài khoản</h1>
+      <h1 class="auth-form-title">ĐĂNG KÝ TÀI KHOẢN</h1>
 
-      <!-- [ngClass] giống class scss, [ngModel] dùng dữ liệu 2 chiều -->
-      <div class="input-control" [ngClass]="{ 'error': submitted && !username }">
+      <!-- Tên người dùng -->
+      <div class="auth-input-control" [ngClass]="{ 'error': submitted && !username }">
         <label for="username">Tên người dùng</label>
-        <input id="username" name="username" type="text" [(ngModel)]="username" required />
+        <input 
+          id="username" 
+          name="username" 
+          type="text" 
+          [(ngModel)]="username" 
+          placeholder="Hãy nhập tên người dùng"
+          required 
+        />
         <div class="error" *ngIf="submitted && !username">Tên người dùng là bắt buộc</div>
       </div>
 
-      <div class="input-control" [ngClass]="{ 'error': submitted && !isValidEmail(email) }">
+      <!-- Email -->
+      <div class="auth-input-control" [ngClass]="{ 'error': submitted && !isValidEmail(email) }">
         <label for="email">Email</label>
-        <input id="email" name="email" type="text" [(ngModel)]="email" required />
+        <input 
+          id="email" 
+          name="email" 
+          type="email" 
+          [(ngModel)]="email" 
+          placeholder="Hãy nhập email của bạn"
+          required 
+        />
         <div class="error" *ngIf="submitted && !isValidEmail(email)">Email không hợp lệ</div>
       </div>
 
-      <div class="input-control" [ngClass]="{ 'error': submitted && password.length < 8 }">
+      <!-- Mật khẩu -->
+      <div class="auth-input-control" [ngClass]="{ 'error': submitted && password.length < 8 }">
         <label for="password">Mật khẩu</label>
-        <input id="password" name="password" type="password" [(ngModel)]="password" required />
+        <div class="password-input-container">
+          <input 
+            [type]="showPassword ? 'text' : 'password'"
+            id="password" 
+            name="password" 
+            [(ngModel)]="password" 
+            placeholder="Hãy nhập mật khẩu (ít nhất 8 ký tự)"
+            required 
+          />
+          <button 
+            type="button" 
+            class="password-toggle-btn"
+            (click)="togglePasswordVisibility()"
+            [attr.aria-label]="showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'"
+          >
+            <ion-icon 
+              [name]="showPassword ? 'eye-off' : 'eye'"
+              class="password-icon"
+            ></ion-icon>
+          </button>
+        </div>
         <div class="error" *ngIf="submitted && password.length < 8">Mật khẩu phải có ít nhất 8 ký tự</div>
       </div>
 
-      <div class="input-control" [ngClass]="{ 'error': submitted && password !== password2 }">
+      <!-- Nhập lại mật khẩu -->
+      <div class="auth-input-control" [ngClass]="{ 'error': submitted && password !== password2 }">
         <label for="password2">Nhập lại mật khẩu</label>
-        <input id="password2" name="password2" type="password" [(ngModel)]="password2" required />
+        <div class="password-input-container">
+          <input 
+            [type]="showConfirmPassword ? 'text' : 'password'"
+            id="password2" 
+            name="password2" 
+            [(ngModel)]="password2" 
+            placeholder="Hãy nhập lại mật khẩu"
+            required 
+          />
+          <button 
+            type="button" 
+            class="password-toggle-btn"
+            (click)="toggleConfirmPasswordVisibility()"
+            [attr.aria-label]="showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'"
+          >
+            <ion-icon 
+              [name]="showConfirmPassword ? 'eye-off' : 'eye'"
+              class="password-icon"
+            ></ion-icon>
+          </button>
+        </div>
         <div class="error" *ngIf="submitted && password !== password2">Mật khẩu không trùng nhau</div>
       </div>
 
-      <div class="signup-button">
-        <ion-button type="submit">ĐĂNG KÝ</ion-button>
+      <!-- Nút Đăng ký -->
+      <div class="auth-button">
+        <ion-button expand="block" type="submit">ĐĂNG KÝ</ion-button>
       </div>
 
-      <div class="text-center">
+      <!-- Link đăng nhập -->
+      <div class="auth-text-center">
         <p>Bạn đã có sẵn tài khoản? <a [routerLink]="['/login']">Đăng nhập</a></p>
       </div>
     </form>

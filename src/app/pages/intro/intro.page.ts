@@ -16,7 +16,7 @@ export class IntroPage implements OnInit {
     if (hasSeenIntro) {
       // Nếu đã xem intro, chuyển thẳng sang login
       this.navCtrl.navigateRoot('/login');
-      console.log('Đã xem intro rồi → chuyển sang login');
+      // console.log('Đã xem intro rồi → chuyển sang login');
     }
   }
 
@@ -24,7 +24,7 @@ export class IntroPage implements OnInit {
     // Lưu trạng thái đã xem
     localStorage.setItem('hasSeenIntro', 'true');
     // Điều hướng sang login
-    console.log('Chuyển sang login');
+    // console.log('Chuyển sang login');
     // nếu có trang login gòi this.navCtrl.navigateRoot('/login');
     this.navCtrl.navigateRoot('/login');
   }

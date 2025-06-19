@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap } from 'rxjs';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
+import { Observable, BehaviorSubject, tap, throwError } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 
 // Khởi tạo ứng dụng
 @Injectable({
@@ -27,6 +28,10 @@ export class AuthService {
   //Lưu biến avatar vào localstorage
   private avatarUrlSubject = new BehaviorSubject<string | null>(localStorage.getItem('user_avatar'));
   avatarUrl$ = this.avatarUrlSubject.asObservable();
+
+  // Subject để thông báo token hết hạn
+  private tokenExpiredSubject = new BehaviorSubject<boolean>(false);
+  tokenExpired$ = this.tokenExpiredSubject.asObservable();
 
   //Khởi tạo khi vừa thực hiện
   constructor(private http: HttpClient) {
@@ -57,6 +62,63 @@ export class AuthService {
     this.avatarUrlSubject.next(url);
   }
 
+  // Kiểm tra token có hợp lệ không
+  isTokenValid(): boolean {
+    const token = this.getAccessToken();
+    if (!token) return false;
+
+    try {
+      // Decode JWT token để kiểm tra expiration
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      
+      if (payload.exp && payload.exp < currentTime) {
+        this.handleTokenExpiration();
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Lỗi khi kiểm tra token:', error);
+      this.handleTokenExpiration();
+      return false;
+    }
+  }
+
+  // Xử lý khi token hết hạn
+  handleTokenExpiration(): void {
+    console.log('Token đã hết hạn, đăng xuất người dùng');
+    this.logout();
+    this.tokenExpiredSubject.next(true);
+  }
+
+  // Reset trạng thái token expired
+  resetTokenExpiredStatus(): void {
+    this.tokenExpiredSubject.next(false);
+  }
+
+  // Kiểm tra và refresh token nếu cần
+  checkAndRefreshToken(): Observable<boolean> {
+    if (!this.isTokenValid()) {
+      return throwError(() => new Error('Token không hợp lệ'));
+    }
+
+    // Gọi API để kiểm tra token
+    return this.http.get<any>(`${this.apiUrl}users/me`, { 
+      headers: this.getAuthHeaders() 
+    }).pipe(
+      tap(() => {
+        // Token vẫn hợp lệ
+        this.resetTokenExpiredStatus();
+      }),
+      catchError((error: HttpErrorResponse) => {
+        if (error.status === 401 || error.status === 403) {
+          this.handleTokenExpiration();
+        }
+        return throwError(() => error);
+      })
+    );
+  }
 
   getIsLoggedIn(): boolean {
     return this.loggedIn.value;
@@ -120,6 +182,7 @@ export class AuthService {
           localStorage.setItem('loggedIn', 'true');
           localStorage.setItem('access_token', response.access_token);
           this.loggedIn.next(true);
+          this.resetTokenExpiredStatus(); // Reset trạng thái token expired
 
           // Gọi API /users/me để lấy thông tin người dùng chi tiết
           const authHeaders = new HttpHeaders({
@@ -147,25 +210,24 @@ export class AuthService {
     );
   }
 
-
   //Đăng xuất và xóa thông tin khỏi localStorage
   logout(): void {
-  // Xóa tất cả các key liên quan
-  localStorage.removeItem('loggedIn');
-  localStorage.removeItem('username');
-  localStorage.removeItem('access_token');
-  localStorage.removeItem('userId');
-  localStorage.removeItem('user_avatar');
-  localStorage.removeItem('user_email');
-  localStorage.removeItem('user_phone');
-  localStorage.removeItem('displayName');
+    // Xóa tất cả các key liên quan
+    localStorage.removeItem('loggedIn');
+    localStorage.removeItem('username');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('user_avatar');
+    localStorage.removeItem('user_email');
+    localStorage.removeItem('user_phone');
+    localStorage.removeItem('displayName');
 
-  // Reset các BehaviorSubject về null/false
-  this.loggedIn.next(false);
-  this.username.next(null);
-  this.userId.next(null);
-  this.avatarUrlSubject.next(null);
-}
+    // Reset các BehaviorSubject về null/false
+    this.loggedIn.next(false);
+    this.username.next(null);
+    this.userId.next(null);
+    this.avatarUrlSubject.next(null);
+  }
 
   getAccessToken(): string | null {
     return localStorage.getItem('access_token');

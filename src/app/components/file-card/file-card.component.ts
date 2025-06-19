@@ -24,6 +24,8 @@ interface dislikeresponse {
 export class FileCardComponent {
   @Input() file: any; // nhận dữ liệu file đầu vào
   @Output() cardClick = new EventEmitter<string>(); // đầu ra của sự kiện cardclick, phát ra chuỗi ký tự id
+  @Output() deleted = new EventEmitter<void>();
+  @Output() reloadTabs = new EventEmitter<void>();
   hasLiked: boolean = false; // biến để kiểm tra người dùng đã like chưa
   hasDisliked: boolean = false; // biến để kiểm tra người dùng đã dislike chưa
 

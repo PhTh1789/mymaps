@@ -6,6 +6,7 @@ import { MapShareService } from '../services/map-share.service';
 import { DocumentService } from '../services/document.service';
 import { Subscription } from 'rxjs';
 import { TabLabels } from '../tab-labels';
+import { MapService } from '../services/map.service';
 
 interface SearchResult {
   display_name: string;
@@ -31,14 +32,19 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   searchQuery: string = '';
   searchResults: any[] = [];
   selectedMapId: number | null = null; // id của map đã chọn từ template
+  selectedMapName: string = ''; // Tên của map đang được chọn
   private pointMarkers: L.Marker[] = []; //mảng chứa tất cả marker đang hiển thị
   private mapIdSub?: Subscription;
+  selectedGeom: string | null = null;
+  showPointForm = false;
+  loadingPoint = false;
 
   //khởi tạo menu
   constructor(
     private menuCtrl: MenuController,
     private mapShareService: MapShareService,
-    private documentService: DocumentService
+    private documentService: DocumentService,
+    private mapService: MapService
   ) {}
   ngAfterViewInit() {
     this.initMap();
@@ -50,6 +56,9 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit() {
     this.mapIdSub = this.mapShareService.currentMapId$.subscribe((id) => {
       if (id) {
+        this.selectedMapId = id;
+        this.loadMapName(id);
+        
         this.documentService.getMapPoints(id).subscribe((points) => {
           this.clearPointMarkers();
           let minPoint: any = null;
@@ -212,23 +221,29 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   }
 
   private initMap(): void {
-    // nếu có map r thì không tạo lại
     if (this.map) return;
-
-    // nếu chưa có thì tạo, gắn vào phần tử có id = "map"
     this.map = L.map('map').setView(
       [10.870126934968653, 106.79020962591983],
       20
     );
-
-    // Khởi tạo layer bản đồ, mặc định là bản đồ openstreetmap, khi thay đổi dạng bản đồ chỉ cần thay đổi biến currentTileLayer
     this.currentTileLayer = L.tileLayer(
       'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
       {}
     ).addTo(this.map);
-
     this.addLocationControl();
     this.addTerrainControl();
+    // Thêm sự kiện click trên bản đồ để tạo điểm mới
+    this.map.on('click', (e: any) => {
+      if (!this.selectedMapId) {
+        // Không làm gì khi chưa chọn map
+        return;
+      }
+      
+      const lat = e.latlng.lat;
+      const lon = e.latlng.lng;
+      this.selectedGeom = lon + ' ' + lat;
+      this.showPointForm = true;
+    });
   }
   //  hàm tạo nút định vị không trả về giá trị (void)
   private addLocationControl(): void {
@@ -353,6 +368,83 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   private clearPointMarkers() {
     this.pointMarkers.forEach((marker) => this.map.removeLayer(marker));
     this.pointMarkers = [];
+  }
+
+  onSubmitPoint(data: any) {
+    if (!this.selectedMapId || !this.selectedGeom) return;
+    this.loadingPoint = true;
+    this.mapService.createPoint(this.selectedMapId.toString(), {
+      map_id: this.selectedMapId.toString(),
+      name: data.name,
+      description: data.description,
+      image: data.image,
+      geom: this.selectedGeom
+    }).subscribe({
+      next: () => {
+        this.loadingPoint = false;
+        this.showPointForm = false;
+        this.selectedGeom = null;
+        // Reload lại các điểm trên bản đồ
+        if (this.selectedMapId) {
+          this.documentService.getMapPoints(this.selectedMapId).subscribe((points) => {
+            this.clearPointMarkers();
+            let minPoint: any = null;
+            points.forEach((point) => {
+              const latlng = wkbHexToLatLng(point.geom);
+              if (latlng) {
+                const marker = L.marker([latlng.lat, latlng.lon], {
+                  icon: L.icon({
+                    iconUrl: '../assets/icon/location-icon.png',
+                    iconSize: [25, 40],
+                  }),
+                }).addTo(this.map).bindPopup(point.name);
+                this.pointMarkers.push(marker);
+                if (!minPoint || point.point_id < minPoint.point_id) {
+                  minPoint = { ...point, ...latlng };
+                }
+              }
+            });
+            if (minPoint) {
+              this.map.setView([minPoint.lat, minPoint.lon], 18);
+            }
+          });
+        }
+      },
+      error: () => {
+        this.loadingPoint = false;
+        // Có thể hiển thị thông báo lỗi
+      }
+    });
+  }
+
+  closePointForm() {
+    this.showPointForm = false;
+    this.selectedGeom = null;
+  }
+
+  // Lấy tên map từ MapService
+  loadMapName(mapId: number) {
+    this.mapService.getMaps().subscribe({
+      next: (maps: any[]) => {
+        const selectedMap = maps.find(map => map.map_id === mapId);
+        if (selectedMap && selectedMap.name) {
+          this.selectedMapName = selectedMap.name;
+        } else {
+          this.selectedMapName = 'Bản đồ';
+        }
+      },
+      error: (error) => {
+        console.error('Lỗi khi lấy tên map:', error);
+        this.selectedMapName = 'Bản đồ';
+      }
+    });
+  }
+
+  // Hủy chọn map
+  clearSelectedMap() {
+    this.selectedMapId = null;
+    this.selectedMapName = '';
+    this.clearPointMarkers();
   }
 }
 
