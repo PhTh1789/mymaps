@@ -39,6 +39,11 @@ export class BaseLayoutComponent implements OnInit {
     this.router.navigate(['/settings']);
   }
 
+  goToAboutUs() {
+    this.menu.close('main-menu');
+    this.router.navigate(['/about-us']);
+  }
+
   logout() {
     this.authService.logout();
     this.menu.close('main-menu');

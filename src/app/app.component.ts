@@ -5,10 +5,12 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { Location } from '@angular/common';
 import { App } from '@capacitor/app';
 import { AuthService } from './services/auth.service';
+import { TokenCheckerService } from './services/token-checker.service';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { distinctUntilChanged } from 'rxjs/operators';
 import { register } from 'swiper/element/bundle';
+import { TokenExpiredModalComponent } from './components/token-expired-modal/token-expired-modal.component';
 
 register();
 @Component({
@@ -31,6 +33,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor(
     public authService: AuthService,
+    private tokenCheckerService: TokenCheckerService,
     private platform: Platform,
     private alertController: AlertController,
     private location: Location,
@@ -100,6 +103,13 @@ export class AppComponent implements OnInit, OnDestroy {
           this.updateMenu();
           this.cdr.detectChanges();
           this.showMenuButton = status && this.router.url.startsWith('/tabs');
+          
+          // Khởi động/dừng token checker dựa trên trạng thái đăng nhập
+          if (status) {
+            this.tokenCheckerService.restartTokenChecking();
+          } else {
+            this.tokenCheckerService.stopTokenChecking();
+          }
         }),
 
       this.authService.username$.subscribe(name => {

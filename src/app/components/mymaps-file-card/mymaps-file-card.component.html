@@ -1,34 +1,5 @@
 <!-- cấu trúc thẻ tài liệu, click chạy hàm onClickCard() -->
-<div class="file-card-container" (click)="onClickCard()" style="position: relative;">
-  <!-- Nút xóa bản đồ nằm ở góc phải -->
-  <button class="delete-map-btn" (click)="onDeleteMap($event)" title="Xóa bản đồ" [disabled]="isDeleting">
-    <!-- hiển thị icon xóa xoay vòng vòng nhức đầu vcb-->
-    <ng-container *ngIf="!isDeleting">
-      <ion-icon name="trash-outline"></ion-icon>
-    </ng-container>
-
-    <ng-container *ngIf="isDeleting">
-      <ion-spinner name="crescent" class="delete-spinner"></ion-spinner>
-    </ng-container>
-  
-  </button>
-
-  <!-- Nút public/private map -->
-  <button 
-    class="public-map-btn" 
-    (click)="onShareMap($event)"
-    title="{{ isShared ? 'Chuyển về private' : 'Public bản đồ' }}"
-    [disabled]="isPublishing"
-    [ngClass]="{ 'shared': isShared, 'not-shared': !isShared }"
-  >
-    <ng-container *ngIf="!isPublishing">
-      <ion-icon name="share-social-outline"></ion-icon>
-    </ng-container>
-    <ng-container *ngIf="isPublishing">
-      <ion-spinner name="crescent" class="public-spinner"></ion-spinner>
-    </ng-container>
-  </button>
-
+<div class="file-card-container" (click)="onClickCard()">
   <div class="map-box">
     <img *ngIf="file?.image_url" [src]="file.image_url" alt="map image" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" />
   </div>
@@ -40,5 +11,31 @@
       <p>{{ truncateText( file?.description ) }}</p>
       <p>Cập nhật: {{ file?.modified_at }}</p>
     </div>
+  </div>
+  <div class="file-card-actions">
+    <!-- Nút public/private map -->
+    <button 
+      class="public-map-btn" 
+      (click)="onShareMap($event)"
+      title="{{ isShared ? 'Chuyển về private' : 'Public bản đồ' }}"
+      [disabled]="isPublishing"
+      [ngClass]="{ 'shared': isShared, 'not-shared': !isShared }"
+    >
+      <ng-container *ngIf="!isPublishing">
+        <ion-icon name="share-social-outline"></ion-icon>
+      </ng-container>
+      <ng-container *ngIf="isPublishing">
+        <ion-spinner name="crescent" class="public-spinner"></ion-spinner>
+      </ng-container>
+    </button>
+    <!-- Nút xóa bản đồ nằm ở góc phải -->
+    <button class="delete-map-btn" (click)="onDeleteMap($event)" title="Xóa bản đồ" [disabled]="isDeleting">
+      <ng-container *ngIf="!isDeleting">
+        <ion-icon name="trash-outline"></ion-icon>
+      </ng-container>
+      <ng-container *ngIf="isDeleting">
+        <ion-spinner name="crescent" class="delete-spinner"></ion-spinner>
+      </ng-container>
+    </button>
   </div>
 </div>

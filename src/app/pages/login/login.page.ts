@@ -28,6 +28,7 @@ export class LoginPage {
   password: string = '';
   loginError: string = '';
   submitted = false;
+  showPassword: boolean = false;
 
   //Thực hiện lệnh khi được khởi tạo
   constructor(
@@ -37,6 +38,10 @@ export class LoginPage {
     // Đã xóa logic tự động chuyển hướng sang /tabs nếu đã đăng nhập
   }
 
+  // Toggle hiển thị/ẩn mật khẩu
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+  }
 
   //Nút nhấn đăng nhập
   onSubmit() {

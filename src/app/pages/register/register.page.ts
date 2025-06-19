@@ -20,8 +20,20 @@ export class RegisterPage {
   password2: string = '';
   submitted = false;
   registerError: string = '';
+  showPassword: boolean = false;
+  showConfirmPassword: boolean = false;
 
   constructor(private authService: AuthService, private router: Router) {}
+
+  // Toggle hiển thị/ẩn mật khẩu
+  togglePasswordVisibility() {
+    this.showPassword = !this.showPassword;
+  }
+
+  // Toggle hiển thị/ẩn mật khẩu xác nhận
+  toggleConfirmPasswordVisibility() {
+    this.showConfirmPassword = !this.showConfirmPassword;
+  }
 
   // Nút đăng ký
   onSubmit() {
