@@ -85,8 +85,15 @@ ion-searchbar {
     p {
         color: rgb(0, 0, 0);
         text-align: center;
-        margin: 20px 0;
+        margin: 0;
         font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        height: 100%;
+        width: 100%;
+        grid-column: 1/-1;
     }
 }
 
@@ -222,6 +229,39 @@ ion-searchbar {
         ion-button[type="submit"] {
             height: 44px;
             font-size: 1em;
+        }
+    }
+}
+
+ion-segment {
+    --background: transparent;
+    --indicator-box-shadow: none;
+    --border-radius: 16px;
+    padding: 4px 0;
+
+    ion-segment-button {
+        --background: transparent;
+        // --color-checked: #2196f3;
+        --color: #333;
+        border-radius: 16px;
+        margin: 0 4px;
+        transition: background 0.2s;
+        box-shadow: none;
+        border: none;
+        min-width: 90px;
+        
+        &.segment-button-checked {
+            background: rgba(33,150,243,0.12);
+            // color: #2196f3;
+        }
+
+        ion-label {
+            background: transparent !important;
+            border-radius: 16px;
+            padding: 6px 16px;
+            font-weight: 600;
+            font-size: 15px;
+            color: inherit;
         }
     }
 }

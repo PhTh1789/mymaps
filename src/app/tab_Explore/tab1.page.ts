@@ -31,6 +31,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   private CORS_PROXY = 'https://corsproxy.io/?'; // dòng này để tránh lỗi CORS thông qua proxy
   private currentTileLayer!: L.TileLayer; // tạo biến currentTileLayer, kiểu L.TileLayer, dảm bảo không phải null hoặc undefined
   private isTerrainMode: boolean = false;
+  private isRoutingMode: boolean = false; // Thêm biến lưu trạng thái chế độ dẫn đường
   searchQuery: string = '';
   searchResults: any[] = [];
   selectedMapId: number | null = null; // id của map đã chọn từ template
@@ -110,11 +111,6 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
                     }
                   </div>
                 </div>
-                <div style='margin-top: 8px; text-align: right;'>
-                  <button class='navigate-btn' style='padding: 6px 12px; background: #51a245; color: white; border: none; border-radius: 4px; cursor: pointer;' data-lat='${
-                    latlng.lat
-                  }' data-lon='${latlng.lon}'>Dẫn đường tới đây</button>
-                </div>
               `);
               this.documentService.getMapPoints(id).subscribe((points) => {
                 this.clearPointMarkers();
@@ -154,71 +150,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
                     }
                   </div>
                 </div>
-                <div style='margin-top: 8px; text-align: right;'>
-                  <button class='navigate-btn' style='padding: 6px 12px; background: #51a245; color: white; border: none; border-radius: 4px; cursor: pointer;' data-lat='${
-                    latlng.lat
-                  }' data-lon='${latlng.lon}'>Dẫn đường tới đây</button>
-                </div>
               `);
-                    // Thêm sự kiện cho nút dẫn đường khi popup mở
-                    marker.on('popupopen', (e: any) => {
-                      setTimeout(() => {
-                        const btn = document.querySelector('.navigate-btn');
-                        if (btn) {
-                          btn.addEventListener('click', () => {
-                            // Xóa route cũ nếu có trước khi vẽ route mới
-                            if (this.routeControl) {
-                              this.map.removeLayer(this.routeControl);
-                              this.routeControl = null;
-                            }
-                            // Xóa marker vị trí người dùng cũ nếu có
-                            if (this.currentLocationMarker) {
-                              this.map.removeLayer(this.currentLocationMarker);
-                              this.currentLocationMarker = null;
-                            }
-                            // Lấy vị trí hiện tại của người dùng
-                            if ('geolocation' in navigator) {
-                              navigator.geolocation.getCurrentPosition(
-                                (position) => {
-                                  const { latitude, longitude } =
-                                    position.coords;
-                                  // Xóa marker vị trí người dùng cũ nếu có
-                                  if (this.currentLocationMarker) {
-                                    this.map.removeLayer(
-                                      this.currentLocationMarker
-                                    );
-                                    this.currentLocationMarker = null;
-                                  }
-                                  // Tạo marker mới cho vị trí người dùng
-                                  this.currentLocationMarker = L.marker(
-                                    [latitude, longitude],
-                                    {
-                                      icon: L.icon({
-                                        iconUrl:
-                                          '../assets/icon/current-location.png', // Đổi icon nếu muốn
-                                        iconSize: [40, 40],
-                                      }),
-                                    }
-                                  ).addTo(this.map);
-                                  // Vẽ đường đi từ vị trí hiện tại đến điểm này
-                                  this.drawRouteFromTo(
-                                    [latitude, longitude],
-                                    [latlng.lat, latlng.lon]
-                                  );
-                                },
-                                (error) => {
-                                  alert(
-                                    'Không lấy được vị trí hiện tại của bạn!'
-                                  );
-                                }
-                              );
-                            } else {
-                              alert('Trình duyệt không hỗ trợ định vị!');
-                            }
-                          });
-                        }
-                      }, 0);
-                    }); //---
                   }
                 });
               });
@@ -346,6 +278,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     ).addTo(this.map);
     this.addLocationControl();
     this.addTerrainControl();
+    this.addRoutingControl(); // Thêm control bật/tắt chế độ dẫn đường
     // Thêm sự kiện click trên bản đồ để hiển thị popup tạo điểm
     this.map.on('click', (e: any) => {
       if (!this.selectedMapId) {
@@ -659,8 +592,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
         iconUrl: '../assets/icon/location-icon.png',
         iconSize: [40, 40],
       }),
-    })
-      .addTo(this.map)
+    }).addTo(this.map)
       .bindPopup(this.createPointPopupContent(point));
 
     // Lưu point data vào marker để backup method có thể sử dụng
@@ -669,14 +601,6 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     // Thêm sự kiện cho popup khi mở
     marker.on('popupopen', (e: any) => {
       setTimeout(() => {
-        // Xử lý nút dẫn đường
-        const navigateBtn = document.querySelector('.navigate-btn');
-        if (navigateBtn) {
-          navigateBtn.addEventListener('click', () => {
-            this.handleNavigateClick(latlng);
-          });
-        }
-
         // Xử lý nút xóa điểm
         const deleteBtn = document.querySelector('.delete-btn');
         if (deleteBtn) {
@@ -692,19 +616,20 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
         }
       }, 0);
     });
-
     return marker;
   }
 
   // Hàm tối ưu để tạo nội dung popup cho điểm
-  private createPointPopupContent(point: any): string {
+  private createPointPopupContent(
+    point: any,
+    showButton: boolean = false
+  ): string {
     const truncatedName =
       point.name.length > 25 ? point.name.substring(0, 25) + '...' : point.name;
     const truncatedDescription =
       point.description && point.description.length > 150
         ? point.description.substring(0, 150) + '...'
         : point.description || '';
-
     const imageHtml = point.image_url
       ? `<img src="${point.image_url}" 
            style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid #222;"
@@ -723,7 +648,6 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
            Xóa điểm
          </button>`
       : '';
-
     return `
       <div style="display: flex; align-items: flex-start; width: 280px; padding: 8px;">
         <div style="flex: 2; padding: 4px; max-width: 150px;">
@@ -739,7 +663,6 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
         </div>
       </div>
       <div style='margin-top: 8px; text-align: right;'>
-        <button class='navigate-btn' style='padding: 6px 12px; background: #51a245; color: white; border: none; border-radius: 4px; cursor: pointer;' data-lat='${point.latlng?.lat || ''}' data-lon='${point.latlng?.lon || ''}'>Dẫn đường tới đây</button>
         ${deleteButtonHtml}
       </div>
     `;
@@ -917,47 +840,6 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     return canDelete;
   }
 
-  // Xử lý sự kiện click nút dẫn đường
-  private handleNavigateClick(latlng: { lat: number; lon: number }): void {
-    // Xóa route cũ nếu có trước khi vẽ route mới
-    if (this.routeControl) {
-      this.map.removeLayer(this.routeControl);
-      this.routeControl = null;
-    }
-    // Xóa marker vị trí người dùng cũ nếu có
-    if (this.currentLocationMarker) {
-      this.map.removeLayer(this.currentLocationMarker);
-      this.currentLocationMarker = null;
-    }
-    // Lấy vị trí hiện tại của người dùng
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          // Xóa marker vị trí người dùng cũ nếu có
-          if (this.currentLocationMarker) {
-            this.map.removeLayer(this.currentLocationMarker);
-            this.currentLocationMarker = null;
-          }
-          // Tạo marker mới cho vị trí người dùng
-          this.currentLocationMarker = L.marker([latitude, longitude], {
-            icon: L.icon({
-              iconUrl: '../assets/icon/current-location.png',
-              iconSize: [40, 40],
-            }),
-          }).addTo(this.map);
-          // Vẽ đường đi từ vị trí hiện tại đến điểm này
-          this.drawRouteFromTo([latitude, longitude], [latlng.lat, latlng.lon]);
-        },
-        (error) => {
-          alert('Không lấy được vị trí hiện tại của bạn!');
-        }
-      );
-    } else {
-      alert('Trình duyệt không hỗ trợ định vị!');
-    }
-  }
-
   // Xử lý sự kiện click nút xóa điểm
   private async handleDeletePointClick(pointId: string, point: any, marker?: L.Marker): Promise<void> {
     // Debug: In ra thông tin điểm và ID
@@ -1006,36 +888,6 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     await alert.present();
   }
 
-  // Hàm xóa marker cụ thể theo pointId (backup method)
-  private removeMarkerByPointId(pointId: string): void {
-    console.log('Tìm và xóa marker với pointId:', pointId);
-    
-    // Tìm marker trong mảng pointMarkers
-    const markerToRemove = this.pointMarkers.find((marker, index) => {
-      // Lấy point data từ marker (nếu có)
-      const pointData = (marker as any).pointData;
-      if (pointData) {
-        const markerPointId = pointData.point_id || pointData.id || pointData.pointId;
-        return markerPointId === pointId;
-      }
-      return false;
-    });
-    
-    if (markerToRemove) {
-      console.log('Tìm thấy marker để xóa:', markerToRemove);
-      this.map.removeLayer(markerToRemove);
-      
-      // Xóa khỏi mảng pointMarkers
-      const markerIndex = this.pointMarkers.indexOf(markerToRemove);
-      if (markerIndex > -1) {
-        this.pointMarkers.splice(markerIndex, 1);
-        console.log('Đã xóa marker khỏi mảng pointMarkers');
-      }
-    } else {
-      console.log('Không tìm thấy marker với pointId:', pointId);
-    }
-  }
-
   // Hàm xóa điểm
   private async deletePoint(pointId: string, point: any): Promise<void> {
     // Hiển thị loading spinner
@@ -1070,10 +922,6 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
         
         // Reset markerToDelete
         this.markerToDelete = null;
-      } else {
-        // Backup method: Tìm và xóa marker theo pointId
-        console.log('Sử dụng backup method để xóa marker');
-        this.removeMarkerByPointId(pointId);
       }
       
       // Hiển thị thông báo thành công
@@ -1083,9 +931,6 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
         buttons: ['OK']
       });
       await successAlert.present();
-
-      // Không cần reload toàn bộ, chỉ cần xóa marker cụ thể
-      // this.reloadMapPoints();
 
     } catch (error: any) {
       console.error('Lỗi khi xóa điểm:', error);
@@ -1117,6 +962,64 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     } finally {
       this.loadingDelete = false;
     }
+  }
+
+  // Thêm hàm tạo control bật/tắt chế độ dẫn đường
+  private addRoutingControl(): void {
+    const routingButton = L.Control.extend({
+      options: {
+        position: 'bottomleft',
+      },
+      onAdd: (map: L.Map) => {
+        const btn = L.DomUtil.create('button', 'routing-button');
+        btn.innerHTML = '<span style="font-size:22px;">🧭</span>';
+        btn.style.width = '35px';
+        btn.style.height = '35px';
+        btn.style.backgroundColor = 'white';
+        btn.style.border = '5px solid rgba(255, 255, 255, 0.2)';
+        btn.style.borderRadius = '4px';
+        btn.style.cursor = 'pointer';
+        btn.style.display = 'flex';
+        btn.style.alignItems = 'center';
+        btn.style.justifyContent = 'center';
+        btn.title = 'Bật/tắt chế độ dẫn đường';
+        btn.style.transition = 'background 0.2s, color 0.2s';
+        btn.onclick = (event) => {
+          event.stopPropagation();
+          event.preventDefault();
+          this.isRoutingMode = !this.isRoutingMode;
+          if (this.isRoutingMode) {
+            btn.style.backgroundColor = '#51a245';
+            btn.innerHTML =
+              '<span style="font-size:22px; color: white;">🧭</span>';
+          } else {
+            btn.style.backgroundColor = 'white';
+            btn.innerHTML =
+              '<span style="font-size:22px; color: inherit;">🧭</span>';
+          }
+          if (!this.isRoutingMode && this.routeControl) {
+            this.map.removeLayer(this.routeControl);
+            this.routeControl = null;
+          }
+        };
+        // Đảm bảo các sự kiện chuột khác cũng không lan xuống map
+        [
+          'mousedown',
+          'mouseup',
+          'dblclick',
+          'touchstart',
+          'touchend',
+          'pointerdown',
+          'pointerup',
+        ].forEach((evt) => {
+          btn.addEventListener(evt, (e) => {
+            e.stopPropagation();
+          });
+        });
+        return btn;
+      },
+    });
+    new routingButton().addTo(this.map);
   }
 }
 
