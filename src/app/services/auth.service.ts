@@ -23,7 +23,7 @@ export class AuthService {
 
   //Cho phép các component bên ngoài subcrise
   private userId = new BehaviorSubject<string | null>(null);
-  userId$ = this.userId.asObservable();
+  user_id$ = this.userId.asObservable();
 
   //Lưu biến avatar vào localstorage
   private avatarUrlSubject = new BehaviorSubject<string | null>(localStorage.getItem('user_avatar'));

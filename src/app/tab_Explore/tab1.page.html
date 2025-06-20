@@ -30,6 +30,13 @@
       <ion-card-content>
         <ion-icon name="map-outline" color="primary"></ion-icon>
         <p>Đang chọn: <strong>{{ selectedMapName || 'Bản đồ' }}</strong></p>
+        <p *ngIf="selectedMapOwnerId" style="font-size: 0.8em; color: #666;">
+          <ion-icon 
+            [name]="canCreatePoints() ? 'checkmark-circle' : 'close-circle'" 
+            [color]="canCreatePoints() ? 'success' : 'danger'">
+          </ion-icon>
+          {{ canCreatePoints() ? 'Bạn có quyền tạo điểm' : 'Bạn không có quyền tạo điểm' }}
+        </p>
         <ion-button 
           fill="clear" 
           size="small" 

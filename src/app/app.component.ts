@@ -117,7 +117,7 @@ export class AppComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }),
 
-      this.authService.userId$.subscribe(id => {
+      this.authService.user_id$.subscribe(id => {
         this.userId = id;
         this.cdr.detectChanges();
       }),

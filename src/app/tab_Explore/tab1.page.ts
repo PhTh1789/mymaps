@@ -8,6 +8,7 @@ import { Subscription } from 'rxjs';
 import { TabLabels } from '../tab-labels';
 import { MapService } from '../services/map.service';
 import { PointFormService } from '../services/point-form.service';
+import { AuthService } from '../services/auth.service';
 
 interface SearchResult {
   display_name: string;
@@ -34,6 +35,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   searchResults: any[] = [];
   selectedMapId: number | null = null; // id của map đã chọn từ template
   selectedMapName: string = ''; // Tên của map đang được chọn
+  selectedMapOwnerId: string = ''; // ID của chủ sở hữu map
   private pointMarkers: L.Marker[] = []; //mảng chứa tất cả marker đang hiển thị
   private mapIdSub?: Subscription;
   loadingPoint = false;
@@ -49,7 +51,8 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     private mapShareService: MapShareService,
     private documentService: DocumentService,
     private mapService: MapService,
-    private pointFormService: PointFormService
+    private pointFormService: PointFormService,
+    private authService: AuthService
   ) {}
   ngAfterViewInit() {
     this.initMap();
@@ -192,6 +195,32 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
         return;
       }
       
+      // Kiểm tra quyền tạo điểm
+      const currentUserId = this.authService.getUserId();
+      console.log('=== DEBUG CLICK PERMISSION ===');
+      console.log('Clicked at:', e.latlng);
+      console.log('Current User ID:', currentUserId, 'Type:', typeof currentUserId);
+      console.log('Map Owner ID:', this.selectedMapOwnerId, 'Type:', typeof this.selectedMapOwnerId);
+      
+      // Chuyển đổi cả hai về string để so sánh
+      const currentUserIdString = String(currentUserId);
+      const mapOwnerIdString = String(this.selectedMapOwnerId);
+      const hasPermission = currentUserIdString === mapOwnerIdString;
+      
+      console.log('Current User ID (string):', currentUserIdString);
+      console.log('Map Owner ID (string):', mapOwnerIdString);
+      console.log('Permission Check:', hasPermission);
+      console.log('=============================');
+      
+      if (!hasPermission) {
+        // Hiển thị thông báo rằng người dùng không có quyền tạo điểm
+        console.log('❌ Permission DENIED - User cannot create points on this map');
+        this.showPermissionDeniedPopup(e.latlng);
+        return;
+      }
+      
+      console.log('✅ Permission GRANTED - User can create points on this map');
+      
       const lat = e.latlng.lat;
       const lon = e.latlng.lng;
       const geom = lon + ' ' + lat;
@@ -237,7 +266,8 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
             this.pointFormServiceInstance.showPointForm(
               this.selectedMapId!, 
               this.selectedMapName, 
-              geom
+              geom,
+              this.selectedMapOwnerId
             );
             this.map.closePopup();
           });
@@ -499,11 +529,23 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
         const selectedMap = maps.find(map => map.map_id === mapId);
         // kiểm tra xem map có tồn tại và có tên không
         this.selectedMapName = selectedMap?.name || 'Bản đồ';
+        this.selectedMapOwnerId = selectedMap?.user_id || '';
+        
+        // Debug: In ra thông tin user_id và kiểu dữ liệu
+        const currentUserId = this.authService.getUserId();
+        console.log('=== DEBUG MAP OWNERSHIP ===');
+        console.log('Map ID:', mapId, 'Type:', typeof mapId);
+        console.log('Map Name:', this.selectedMapName, 'Type:', typeof this.selectedMapName);
+        console.log('Map Owner ID (from API):', this.selectedMapOwnerId, 'Type:', typeof this.selectedMapOwnerId);
+        console.log('Current User ID (from AuthService):', currentUserId, 'Type:', typeof currentUserId);
+        console.log('Can Create Points:', this.canCreatePoints());
+        console.log('==========================');
       },
       error: (error) => {
         // nếu có lỗi thì gán tên mặc định
         console.error('Lỗi khi lấy tên map:', error);
         this.selectedMapName = 'Bản đồ';
+        this.selectedMapOwnerId = '';
       }
     });
   }
@@ -514,8 +556,44 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     this.selectedMapId = null;
     // xóa tên map
     this.selectedMapName = '';
+    // xóa ID chủ sở hữu map
+    this.selectedMapOwnerId = '';
     // xóa tất cả điểm trên map
     this.clearPointMarkers();
+  }
+
+  // Hàm hiển thị thông báo quyền tạo điểm
+  private showPermissionDeniedPopup(latlng: L.LatLng): void {
+    // Tạo popup thông báo quyền tạo điểm
+    const popup = L.popup()
+      .setLatLng(latlng)
+      .setContent(`
+        <div style="text-align: center; min-width: 200px;">
+          <h4 style="margin: 0 0 10px 0; color: #333;">Quyền tạo điểm</h4>
+          <p style="margin: 5px 0; font-size: 14px;">
+            Bạn không có quyền tạo điểm trên bản đồ này.
+          </p>
+        </div>
+      `)
+      .openOn(this.map);
+  }
+
+  // Kiểm tra xem người dùng hiện tại có quyền tạo điểm trên map đã chọn không
+  canCreatePoints(): boolean {
+    const currentUserId = this.authService.getUserId();
+    const currentUserIdString = String(currentUserId);
+    const mapOwnerIdString = String(this.selectedMapOwnerId);
+    const canCreate = currentUserIdString === mapOwnerIdString;
+    
+    console.log('=== DEBUG CAN CREATE POINTS ===');
+    console.log('Current User ID:', currentUserId, 'Type:', typeof currentUserId);
+    console.log('Map Owner ID:', this.selectedMapOwnerId, 'Type:', typeof this.selectedMapOwnerId);
+    console.log('Current User ID (string):', currentUserIdString);
+    console.log('Map Owner ID (string):', mapOwnerIdString);
+    console.log('Can Create Points:', canCreate);
+    console.log('===============================');
+    
+    return canCreate;
   }
 }
 
