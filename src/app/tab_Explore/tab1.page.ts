@@ -39,6 +39,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   private pointMarkers: L.Marker[] = []; //mảng chứa tất cả marker đang hiển thị
   private mapIdSub?: Subscription;
   loadingPoint = false;
+  private routeControl: any = null; // control để hiển thị đường đi
 
   // Getter để expose service ra template
   get pointFormServiceInstance() {
@@ -66,9 +67,162 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
       if (id) {
         this.selectedMapId = id;
         this.loadMapName(id);
-        
-        // Sử dụng hàm tối ưu để load các điểm
-        this.reloadMapPoints();
+
+        this.documentService.getMapPoints(id).subscribe((points) => {
+          this.clearPointMarkers();
+          points.forEach((point) => {
+            const latlng = wkbHexToLatLng(point.geom);
+            if (latlng) {
+              const marker = L.marker([latlng.lat, latlng.lon], {
+                icon: L.icon({
+                  iconUrl: '../assets/icon/location-icon.png',
+                  iconSize: [40, 40],
+                }),
+              }).addTo(this.map).bindPopup(`
+                <div style="display: flex; align-items: flex-start; width: 280px; padding: 8px;">
+                  <div style="flex: 2; padding: 4px; max-width: 150px;">
+                    <div style="font-size: 1em; font-weight: bold; margin-bottom: 0.25em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                      ${
+                        point.name.length > 10
+                          ? point.name.substring(0, 25) + '...'
+                          : point.name
+                      }
+                    </div>
+                    <div style="font-size: 0.8em; color: #222; word-wrap: break-word; max-height: 80px; overflow-y: auto;">
+                      ${
+                        point.description
+                          ? point.description.length > 150
+                            ? point.description.substring(0, 150) + '...'
+                            : point.description
+                          : ''
+                      }
+                    </div>
+                  </div>
+                  <div style="flex: 1; min-width: 100px; max-width: 120px; height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                    ${
+                      point.image_url
+                        ? `<img src="${point.image_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid #222;" onerror="this.onerror=null; this.src='../assets/default-image.png';" loading="lazy" />`
+                        : ''
+                    }
+                  </div>
+                </div>
+                <div style='margin-top: 8px; text-align: right;'>
+                  <button class='navigate-btn' style='padding: 6px 12px; background: #51a245; color: white; border: none; border-radius: 4px; cursor: pointer;' data-lat='${
+                    latlng.lat
+                  }' data-lon='${latlng.lon}'>Dẫn đường tới đây</button>
+                </div>
+              `);
+              this.documentService.getMapPoints(id).subscribe((points) => {
+                this.clearPointMarkers();
+                points.forEach((point) => {
+                  const latlng = wkbHexToLatLng(point.geom);
+                  if (latlng) {
+                    const marker = L.marker([latlng.lat, latlng.lon], {
+                      icon: L.icon({
+                        iconUrl: '../assets/icon/location-icon.png',
+                        iconSize: [40, 40],
+                      }),
+                    }).addTo(this.map).bindPopup(`
+                <div style="display: flex; align-items: flex-start; width: 280px; padding: 8px;">
+                  <div style="flex: 2; padding: 4px; max-width: 150px;">
+                    <div style="font-size: 1em; font-weight: bold; margin-bottom: 0.25em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                      ${
+                        point.name.length > 10
+                          ? point.name.substring(0, 25) + '...'
+                          : point.name
+                      }
+                    </div>
+                    <div style="font-size: 0.8em; color: #222; word-wrap: break-word; max-height: 80px; overflow-y: auto;">
+                      ${
+                        point.description
+                          ? point.description.length > 150
+                            ? point.description.substring(0, 150) + '...'
+                            : point.description
+                          : ''
+                      }
+                    </div>
+                  </div>
+                  <div style="flex: 1; min-width: 100px; max-width: 120px; height: 100px; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                    ${
+                      point.image_url
+                        ? `<img src="${point.image_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid #222;" onerror="this.onerror=null; this.src='../assets/default-image.png';" loading="lazy" />`
+                        : ''
+                    }
+                  </div>
+                </div>
+                <div style='margin-top: 8px; text-align: right;'>
+                  <button class='navigate-btn' style='padding: 6px 12px; background: #51a245; color: white; border: none; border-radius: 4px; cursor: pointer;' data-lat='${
+                    latlng.lat
+                  }' data-lon='${latlng.lon}'>Dẫn đường tới đây</button>
+                </div>
+              `);
+                    // Thêm sự kiện cho nút dẫn đường khi popup mở
+                    marker.on('popupopen', (e: any) => {
+                      setTimeout(() => {
+                        const btn = document.querySelector('.navigate-btn');
+                        if (btn) {
+                          btn.addEventListener('click', () => {
+                            // Xóa route cũ nếu có trước khi vẽ route mới
+                            if (this.routeControl) {
+                              this.map.removeLayer(this.routeControl);
+                              this.routeControl = null;
+                            }
+                            // Xóa marker vị trí người dùng cũ nếu có
+                            if (this.currentLocationMarker) {
+                              this.map.removeLayer(this.currentLocationMarker);
+                              this.currentLocationMarker = null;
+                            }
+                            // Lấy vị trí hiện tại của người dùng
+                            if ('geolocation' in navigator) {
+                              navigator.geolocation.getCurrentPosition(
+                                (position) => {
+                                  const { latitude, longitude } =
+                                    position.coords;
+                                  // Xóa marker vị trí người dùng cũ nếu có
+                                  if (this.currentLocationMarker) {
+                                    this.map.removeLayer(
+                                      this.currentLocationMarker
+                                    );
+                                    this.currentLocationMarker = null;
+                                  }
+                                  // Tạo marker mới cho vị trí người dùng
+                                  this.currentLocationMarker = L.marker(
+                                    [latitude, longitude],
+                                    {
+                                      icon: L.icon({
+                                        iconUrl:
+                                          '../assets/icon/current-location.png', // Đổi icon nếu muốn
+                                        iconSize: [40, 40],
+                                      }),
+                                    }
+                                  ).addTo(this.map);
+                                  // Vẽ đường đi từ vị trí hiện tại đến điểm này
+                                  this.drawRouteFromTo(
+                                    [latitude, longitude],
+                                    [latlng.lat, latlng.lon]
+                                  );
+                                },
+                                (error) => {
+                                  alert(
+                                    'Không lấy được vị trí hiện tại của bạn!'
+                                  );
+                                }
+                              );
+                            } else {
+                              alert('Trình duyệt không hỗ trợ định vị!');
+                            }
+                          });
+                        }
+                      }, 0);
+                    }); //---
+                  }
+                });
+              });
+            }
+            // Sử dụng hàm tối ưu để load các điểm
+            this.reloadMapPoints();
+          });
+        });
       }
     });
   }
@@ -194,41 +348,54 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
         // Không làm gì khi chưa chọn map
         return;
       }
-      
+
       // Kiểm tra quyền tạo điểm
       const currentUserId = this.authService.getUserId();
       console.log('=== DEBUG CLICK PERMISSION ===');
       console.log('Clicked at:', e.latlng);
-      console.log('Current User ID:', currentUserId, 'Type:', typeof currentUserId);
-      console.log('Map Owner ID:', this.selectedMapOwnerId, 'Type:', typeof this.selectedMapOwnerId);
-      
+      console.log(
+        'Current User ID:',
+        currentUserId,
+        'Type:',
+        typeof currentUserId
+      );
+      console.log(
+        'Map Owner ID:',
+        this.selectedMapOwnerId,
+        'Type:',
+        typeof this.selectedMapOwnerId
+      );
+
       // Chuyển đổi cả hai về string để so sánh
       const currentUserIdString = String(currentUserId);
       const mapOwnerIdString = String(this.selectedMapOwnerId);
       const hasPermission = currentUserIdString === mapOwnerIdString;
-      
+
       console.log('Current User ID (string):', currentUserIdString);
       console.log('Map Owner ID (string):', mapOwnerIdString);
       console.log('Permission Check:', hasPermission);
       console.log('=============================');
-      
+
       if (!hasPermission) {
         // Hiển thị thông báo rằng người dùng không có quyền tạo điểm
-        console.log('❌ Permission DENIED - User cannot create points on this map');
+        console.log(
+          '❌ Permission DENIED - User cannot create points on this map'
+        );
         this.showPermissionDeniedPopup(e.latlng);
         return;
       }
-      
+
       console.log('✅ Permission GRANTED - User can create points on this map');
-      
+
       const lat = e.latlng.lat;
       const lon = e.latlng.lng;
       const geom = lon + ' ' + lat;
-      
+
       // Tạo popup với thông tin vị trí và nút tạo điểm
       const popup = L.popup()
         .setLatLng([lat, lon])
-        .setContent(`
+        .setContent(
+          `
           <div style="text-align: center; min-width: 200px;">
             <h4 style="margin: 0 0 10px 0; color: #333;">Vị trí mới</h4>
             <p style="margin: 5px 0; font-size: 14px;">
@@ -255,17 +422,18 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
               Thêm vào ${this.selectedMapName || 'map'}
             </button>
           </div>
-        `)
+        `
+        )
         .openOn(this.map);
-      
+
       // Thêm event listener cho nút tạo điểm
       setTimeout(() => {
         const createBtn = document.getElementById('createPointBtn');
         if (createBtn) {
           createBtn.addEventListener('click', () => {
             this.pointFormServiceInstance.showPointForm(
-              this.selectedMapId!, 
-              this.selectedMapName, 
+              this.selectedMapId!,
+              this.selectedMapName,
               geom,
               this.selectedMapOwnerId
             );
@@ -326,7 +494,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
           this.currentLocationMarker = L.marker([latitude, longitude], {
             icon: L.icon({
               iconUrl: '../assets/icon/current-location.png',
-              iconSize: [25, 40],
+              iconSize: [50, 50],
             }),
           }).addTo(this.map);
         },
@@ -411,86 +579,85 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     // kiểm tra xem có chọn map và điểm mới không
     const mapId = this.pointFormServiceInstance.getSelectedMapId();
     const geom = this.pointFormServiceInstance.getSelectedGeom();
-    
+
     if (!mapId || !geom) return;
-    
+
     this.loadingPoint = true;
-    
-    this.mapService.createPoint(mapId.toString(), {
-      map_id: mapId.toString(),
-      name: data.name,
-      description: data.description,
-      image: data.image,
-      geom: geom
-    }).subscribe({
-      next: () => {
-        // khi tạo điểm mới thành công
-        this.loadingPoint = false;
-        this.pointFormServiceInstance.hidePointForm();
-        
-        // Reload lại các điểm trên bản đồ
-        this.reloadMapPoints();
-      },
-      error: (error) => {
-        // khi có lỗi
-        this.loadingPoint = false;
-        console.error('Lỗi khi tạo điểm:', error);
-        // Có thể thêm thông báo lỗi cho người dùng ở đây
-      }
-    });
+
+    this.mapService
+      .createPoint(mapId.toString(), {
+        map_id: mapId.toString(),
+        name: data.name,
+        description: data.description,
+        image: data.image,
+        geom: geom,
+      })
+      .subscribe({
+        next: () => {
+          // khi tạo điểm mới thành công
+          this.loadingPoint = false;
+          this.pointFormServiceInstance.hidePointForm();
+
+          // Reload lại các điểm trên bản đồ
+          this.reloadMapPoints();
+        },
+        error: (error) => {
+          // khi có lỗi
+          this.loadingPoint = false;
+          console.error('Lỗi khi tạo điểm:', error);
+          // Có thể thêm thông báo lỗi cho người dùng ở đây
+        },
+      });
   }
 
   // Hàm tối ưu để reload các điểm trên bản đồ
   private reloadMapPoints() {
     if (!this.selectedMapId) return;
-    
-    this.documentService.getMapPoints(this.selectedMapId).subscribe((points) => {
-      this.clearPointMarkers();
-      this.addPointsToMap(points);
-    });
+
+    this.documentService
+      .getMapPoints(this.selectedMapId)
+      .subscribe((points) => {
+        this.clearPointMarkers();
+        this.addPointsToMap(points);
+      });
   }
 
   // Hàm tối ưu để thêm các điểm lên bản đồ
   private addPointsToMap(points: any[]) {
-    let minPoint: any = null;
-    
     points.forEach((point) => {
       const latlng = wkbHexToLatLng(point.geom);
       if (latlng) {
         const marker = this.createPointMarker(point, latlng);
         this.pointMarkers.push(marker);
-        
-        // Tìm điểm có ID nhỏ nhất để làm điểm trung tâm
-        if (!minPoint || point.point_id < minPoint.point_id) {
-          minPoint = { ...point, ...latlng };
-        }
       }
     });
-    
-    // Căn giữa map vào điểm gần nhất
-    if (minPoint) {
-      this.map.setView([minPoint.lat, minPoint.lon], 18);
-    }
   }
 
   // Hàm tối ưu để tạo marker cho điểm
-  private createPointMarker(point: any, latlng: { lat: number; lon: number }): L.Marker {
+  private createPointMarker(
+    point: any,
+    latlng: { lat: number; lon: number }
+  ): L.Marker {
     return L.marker([latlng.lat, latlng.lon], {
       icon: L.icon({
         iconUrl: '../assets/icon/location-icon.png',
-        iconSize: [25, 40],
+        iconSize: [40, 40],
       }),
-    }).addTo(this.map).bindPopup(this.createPointPopupContent(point));
+    })
+      .addTo(this.map)
+      .bindPopup(this.createPointPopupContent(point));
   }
 
   // Hàm tối ưu để tạo nội dung popup cho điểm
   private createPointPopupContent(point: any): string {
-    const truncatedName = point.name.length > 25 ? point.name.substring(0, 25) + '...' : point.name;
-    const truncatedDescription = point.description && point.description.length > 150 
-      ? point.description.substring(0, 150) + '...' 
-      : point.description || '';
-    
-    const imageHtml = point.image_url 
+    const truncatedName =
+      point.name.length > 25 ? point.name.substring(0, 25) + '...' : point.name;
+    const truncatedDescription =
+      point.description && point.description.length > 150
+        ? point.description.substring(0, 150) + '...'
+        : point.description || '';
+
+    const imageHtml = point.image_url
       ? `<img src="${point.image_url}" 
            style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid #222;"
            onerror="this.onerror=null; this.src='../assets/default-image.png';"
@@ -526,18 +693,33 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     this.mapService.getMaps().subscribe({
       next: (maps: any[]) => {
         // tìm map có map_id tương ứng với mapId
-        const selectedMap = maps.find(map => map.map_id === mapId);
+        const selectedMap = maps.find((map) => map.map_id === mapId);
         // kiểm tra xem map có tồn tại và có tên không
         this.selectedMapName = selectedMap?.name || 'Bản đồ';
         this.selectedMapOwnerId = selectedMap?.user_id || '';
-        
+
         // Debug: In ra thông tin user_id và kiểu dữ liệu
         const currentUserId = this.authService.getUserId();
         console.log('=== DEBUG MAP OWNERSHIP ===');
         console.log('Map ID:', mapId, 'Type:', typeof mapId);
-        console.log('Map Name:', this.selectedMapName, 'Type:', typeof this.selectedMapName);
-        console.log('Map Owner ID (from API):', this.selectedMapOwnerId, 'Type:', typeof this.selectedMapOwnerId);
-        console.log('Current User ID (from AuthService):', currentUserId, 'Type:', typeof currentUserId);
+        console.log(
+          'Map Name:',
+          this.selectedMapName,
+          'Type:',
+          typeof this.selectedMapName
+        );
+        console.log(
+          'Map Owner ID (from API):',
+          this.selectedMapOwnerId,
+          'Type:',
+          typeof this.selectedMapOwnerId
+        );
+        console.log(
+          'Current User ID (from AuthService):',
+          currentUserId,
+          'Type:',
+          typeof currentUserId
+        );
         console.log('Can Create Points:', this.canCreatePoints());
         console.log('==========================');
       },
@@ -546,7 +728,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
         console.error('Lỗi khi lấy tên map:', error);
         this.selectedMapName = 'Bản đồ';
         this.selectedMapOwnerId = '';
-      }
+      },
     });
   }
 
@@ -567,14 +749,16 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     // Tạo popup thông báo quyền tạo điểm
     const popup = L.popup()
       .setLatLng(latlng)
-      .setContent(`
+      .setContent(
+        `
         <div style="text-align: center; min-width: 200px;">
           <h4 style="margin: 0 0 10px 0; color: #333;">Quyền tạo điểm</h4>
           <p style="margin: 5px 0; font-size: 14px;">
             Bạn không có quyền tạo điểm trên bản đồ này.
           </p>
         </div>
-      `)
+      `
+      )
       .openOn(this.map);
   }
 
@@ -584,16 +768,61 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     const currentUserIdString = String(currentUserId);
     const mapOwnerIdString = String(this.selectedMapOwnerId);
     const canCreate = currentUserIdString === mapOwnerIdString;
-    
+
     console.log('=== DEBUG CAN CREATE POINTS ===');
-    console.log('Current User ID:', currentUserId, 'Type:', typeof currentUserId);
-    console.log('Map Owner ID:', this.selectedMapOwnerId, 'Type:', typeof this.selectedMapOwnerId);
+    console.log(
+      'Current User ID:',
+      currentUserId,
+      'Type:',
+      typeof currentUserId
+    );
+    console.log(
+      'Map Owner ID:',
+      this.selectedMapOwnerId,
+      'Type:',
+      typeof this.selectedMapOwnerId
+    );
     console.log('Current User ID (string):', currentUserIdString);
     console.log('Map Owner ID (string):', mapOwnerIdString);
     console.log('Can Create Points:', canCreate);
     console.log('===============================');
-    
+
     return canCreate;
+  }
+
+  // Thêm hàm vẽ route từ vị trí hiện tại đến điểm đích bất kỳ
+  private drawRouteFromTo(
+    currentLocation: [number, number],
+    destination: [number, number]
+  ): void {
+    // Xóa route cũ nếu có
+    if (this.routeControl) {
+      this.map.removeLayer(this.routeControl);
+      this.routeControl = null;
+    }
+    //api yêu cầu 1 tuyến đường từ (latlon) điểm đầu đến (latlon)diểm cuối
+    const routeUrl = `https://router.project-osrm.org/route/v1/driving/${currentLocation[1]},${currentLocation[0]};${destination[1]},${destination[0]}?overview=full&geometries=geojson`;
+    fetch(routeUrl)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          const routeCoordinates = route.geometry.coordinates.map(
+            (coord: number[]) => [coord[1], coord[0]]
+          );
+          const routeLine = L.polyline(routeCoordinates, {
+            color: 'red',
+            weight: 2,
+          }).addTo(this.map);
+          this.routeControl = routeLine;
+          // Zoom vào tuyến đường
+          this.map.fitBounds(routeLine.getBounds(), { padding: [30, 30] });
+        }
+      })
+      .catch((error) => {
+        alert('Không thể lấy đường đi!');
+        console.error('Lỗi khi lấy đường đi:', error);
+      });
   }
 }
 
