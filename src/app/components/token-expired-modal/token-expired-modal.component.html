@@ -1,0 +1,34 @@
+<ion-modal [isOpen]="showModal" (didDismiss)="onDismiss()" [backdropDismiss]="false">
+  <ng-template>
+    <ion-header>
+      <ion-toolbar>
+        <ion-title>Phiên đăng nhập hết hạn</ion-title>
+      </ion-toolbar>
+    </ion-header>
+    
+    <ion-content class="ion-padding">
+      <div class="token-expired-content">
+        <div class="icon-container">
+          <ion-icon name="warning-outline" class="warning-icon"></ion-icon>
+        </div>
+        
+        <h2 class="title">Phiên đăng nhập đã hết hạn</h2>
+        
+        <p class="message">
+          Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại để tiếp tục sử dụng ứng dụng.
+        </p>
+        
+        <div class="button-container">
+          <ion-button 
+            expand="block" 
+            (click)="onReLogin()"
+            class="re-login-btn"
+          >
+            <ion-icon name="log-in-outline" slot="start"></ion-icon>
+            Đăng nhập lại
+          </ion-button>
+        </div>
+      </div>
+    </ion-content>
+  </ng-template>
+</ion-modal> 

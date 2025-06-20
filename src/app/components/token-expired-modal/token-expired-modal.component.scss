@@ -1,0 +1,133 @@
+.token-expired-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+.icon-container {
+  margin-bottom: 1.5rem;
+  
+  .warning-icon {
+    font-size: 4rem;
+    color: #f59e0b;
+  }
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 1rem;
+  margin-top: 0;
+}
+
+.message {
+  font-size: 1rem;
+  color: #6b7280;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  max-width: 400px;
+}
+
+.button-container {
+  width: 100%;
+  max-width: 300px;
+  
+  .re-login-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 0.75rem;
+    font-weight: 600;
+    height: 3rem;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+// Mobile optimizations
+@media (max-width: 480px) {
+  .token-expired-content {
+    min-height: 50vh;
+    padding: 1.5rem 1rem;
+  }
+  
+  .icon-container .warning-icon {
+    font-size: 3rem;
+  }
+  
+  .title {
+    font-size: 1.25rem;
+  }
+  
+  .message {
+    font-size: 0.9rem;
+  }
+  
+  .button-container .re-login-btn {
+    height: 2.75rem;
+    font-size: 0.9rem;
+  }
+}
+
+// Tablet optimizations
+@media (min-width: 481px) and (max-width: 768px) {
+  .token-expired-content {
+    min-height: 55vh;
+  }
+  
+  .icon-container .warning-icon {
+    font-size: 3.5rem;
+  }
+  
+  .title {
+    font-size: 1.75rem;
+  }
+  
+  .message {
+    font-size: 1.05rem;
+  }
+}
+
+// Desktop optimizations
+@media (min-width: 769px) {
+  .token-expired-content {
+    min-height: 65vh;
+    padding: 3rem 2rem;
+  }
+  
+  .icon-container .warning-icon {
+    font-size: 5rem;
+  }
+  
+  .title {
+    font-size: 2rem;
+  }
+  
+  .message {
+    font-size: 1.1rem;
+    max-width: 500px;
+  }
+  
+  .button-container {
+    max-width: 350px;
+    
+    .re-login-btn {
+      height: 3.25rem;
+      font-size: 1.05rem;
+    }
+  }
+} 

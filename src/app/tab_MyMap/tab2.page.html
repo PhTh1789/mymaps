@@ -1,0 +1,103 @@
+<ion-header [translucent]="true">
+  <div class="search-container">
+    <!-- mở/tắt cái menu -->
+    <ion-avatar class="menu-avatar" (click)="openMenu()">
+      <img src="assets/img/avatar.jpg" />
+    </ion-avatar>
+    <ion-searchbar
+      [(ngModel)]="searchQuery"
+      (ionInput)="onSearchChange($event)"
+      (ionClear)="clearSearch()"
+      placeholder="Tìm kiếm bản đồ của bạn..."
+      animated="true"
+      showCancelButton="focus">
+    </ion-searchbar>
+  </div>
+
+  <!-- Segment cho tất cả, tôi tạo, được chia sẻ -->
+  <ion-toolbar>
+
+    <ion-segment [(ngModel)]="segmentValue" (ionChange)="segmentChanged($event)">
+      <ion-segment-button value="all">
+        <ion-label>Tất cả</ion-label>
+      </ion-segment-button>
+
+      <ion-segment-button value="created">
+        <ion-label>Tôi tạo</ion-label>
+      </ion-segment-button>
+
+      <ion-segment-button value="shared">
+        <ion-label>Mẫu</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true">
+
+  <div class="documents-grid-container">
+    <app-mymaps-file-card
+      *ngFor="let file of filteredMaps"
+      [file]="file"
+      (deleted)="loadMaps()"
+      (reloadTabs)="loadMaps()">
+    </app-mymaps-file-card>
+<!-- nếu filteredFiles.length = 0 nghĩa là không có tài liệu nào thỏa mãn từ khóa tìm kiếm -->
+    <p *ngIf="filteredMaps.length === 0">Không có tài liệu nào để hiển thị.</p>
+  </div>
+
+  <!-- Nút Create map -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button (click)="openCreateMapModal()">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+
+  <!-- Modal tạo map -->
+  <ion-modal [isOpen]="isModalOpen">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Tạo Map Mới</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeModal()">Đóng</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <!-- tạo map -->
+      <ion-content class="ion-padding">
+        <form [formGroup]="createMapForm" (ngSubmit)="onSubmit()" class="create-map-form">
+          <ion-item>
+            <ion-label position="stacked">Tên Map</ion-label>
+            <ion-input formControlName="name" type="text" placeholder="Nhập tên bản đồ"></ion-input>
+          </ion-item>
+          
+          <ion-item>
+            <ion-label position="stacked">Mô tả</ion-label>
+            <ion-textarea formControlName="description" rows="3" placeholder="Nhập mô tả cho bản đồ"></ion-textarea>
+          </ion-item>
+
+          <ion-item class="image-upload-item">
+            <ion-label position="stacked">Hình ảnh</ion-label>
+            <div class="file-input-wrapper">
+              <label class="custom-file-input">
+                <ion-icon name="image-outline"></ion-icon>
+                <span>{{ selectedFile ? selectedFile.name : 'Chọn hình ảnh' }}</span>
+                <input type="file" (change)="onFileSelected($event)" accept="image/*" style="display: none;">
+              </label>
+            </div>
+          </ion-item>
+
+          <ion-item>
+            <ion-label position="stacked">Danh mục</ion-label>
+            <ion-input formControlName="category" type="text" placeholder="Nhập danh mục"></ion-input>
+          </ion-item>
+
+          <ion-button expand="block" type="submit">
+            Tạo Map
+          </ion-button>
+        </form>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
+</ion-content>

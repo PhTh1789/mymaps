@@ -1,0 +1,63 @@
+// Styles đặc biệt cho file-card component
+// Các styles chung đã được di chuyển vào global.scss
+
+// Điều chỉnh margin-bottom cho file-card
+.file-card-container {
+  margin-bottom: -10px;
+}
+
+//nút download
+.download-btn {
+  display: flex;
+  align-items: center;
+  border-radius: 6px;
+  margin-right: 4px;
+  padding: 0;
+  color: #111;
+  font-size: 25px;
+  background-color: #eff0de;
+}
+
+.download-icon {
+  color:#51a245
+}
+
+.like-dislike-group {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.like-dislike-group button:active {
+  transform: scale(1.1); /* hiệu ứng phóng to nhẹ */
+  transition: transform 0.1s ease;
+  border: 2px solid #d7d7d7;
+}
+
+.like-btn, .dislike-btn {
+  background: #fff;
+  border-radius: 6px;
+  padding: 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.like-btn ion-icon, 
+.dislike-btn ion-icon {
+  font-size: 14px;
+  margin-right: 4px;
+  color: #ffffff;
+}
+
+.like-btn {
+  background-color: #51a245;
+}
+
+.dislike-btn {
+  background-color: #bc4753;
+}
