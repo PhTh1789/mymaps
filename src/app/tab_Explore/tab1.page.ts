@@ -31,6 +31,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   private CORS_PROXY = 'https://corsproxy.io/?'; // dòng này để tránh lỗi CORS thông qua proxy
   private currentTileLayer!: L.TileLayer; // tạo biến currentTileLayer, kiểu L.TileLayer, dảm bảo không phải null hoặc undefined
   private isTerrainMode: boolean = false;
+  private isRoutingMode: boolean = false; // Thêm biến lưu trạng thái chế độ dẫn đường
   searchQuery: string = '';
   searchResults: any[] = [];
   selectedMapId: number | null = null; // id của map đã chọn từ template
@@ -106,11 +107,6 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
                     }
                   </div>
                 </div>
-                <div style='margin-top: 8px; text-align: right;'>
-                  <button class='navigate-btn' style='padding: 6px 12px; background: #51a245; color: white; border: none; border-radius: 4px; cursor: pointer;' data-lat='${
-                    latlng.lat
-                  }' data-lon='${latlng.lon}'>Dẫn đường tới đây</button>
-                </div>
               `);
               this.documentService.getMapPoints(id).subscribe((points) => {
                 this.clearPointMarkers();
@@ -150,71 +146,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
                     }
                   </div>
                 </div>
-                <div style='margin-top: 8px; text-align: right;'>
-                  <button class='navigate-btn' style='padding: 6px 12px; background: #51a245; color: white; border: none; border-radius: 4px; cursor: pointer;' data-lat='${
-                    latlng.lat
-                  }' data-lon='${latlng.lon}'>Dẫn đường tới đây</button>
-                </div>
               `);
-                    // Thêm sự kiện cho nút dẫn đường khi popup mở
-                    marker.on('popupopen', (e: any) => {
-                      setTimeout(() => {
-                        const btn = document.querySelector('.navigate-btn');
-                        if (btn) {
-                          btn.addEventListener('click', () => {
-                            // Xóa route cũ nếu có trước khi vẽ route mới
-                            if (this.routeControl) {
-                              this.map.removeLayer(this.routeControl);
-                              this.routeControl = null;
-                            }
-                            // Xóa marker vị trí người dùng cũ nếu có
-                            if (this.currentLocationMarker) {
-                              this.map.removeLayer(this.currentLocationMarker);
-                              this.currentLocationMarker = null;
-                            }
-                            // Lấy vị trí hiện tại của người dùng
-                            if ('geolocation' in navigator) {
-                              navigator.geolocation.getCurrentPosition(
-                                (position) => {
-                                  const { latitude, longitude } =
-                                    position.coords;
-                                  // Xóa marker vị trí người dùng cũ nếu có
-                                  if (this.currentLocationMarker) {
-                                    this.map.removeLayer(
-                                      this.currentLocationMarker
-                                    );
-                                    this.currentLocationMarker = null;
-                                  }
-                                  // Tạo marker mới cho vị trí người dùng
-                                  this.currentLocationMarker = L.marker(
-                                    [latitude, longitude],
-                                    {
-                                      icon: L.icon({
-                                        iconUrl:
-                                          '../assets/icon/current-location.png', // Đổi icon nếu muốn
-                                        iconSize: [40, 40],
-                                      }),
-                                    }
-                                  ).addTo(this.map);
-                                  // Vẽ đường đi từ vị trí hiện tại đến điểm này
-                                  this.drawRouteFromTo(
-                                    [latitude, longitude],
-                                    [latlng.lat, latlng.lon]
-                                  );
-                                },
-                                (error) => {
-                                  alert(
-                                    'Không lấy được vị trí hiện tại của bạn!'
-                                  );
-                                }
-                              );
-                            } else {
-                              alert('Trình duyệt không hỗ trợ định vị!');
-                            }
-                          });
-                        }
-                      }, 0);
-                    }); //---
                   }
                 });
               });
@@ -342,6 +274,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     ).addTo(this.map);
     this.addLocationControl();
     this.addTerrainControl();
+    this.addRoutingControl(); // Thêm control bật/tắt chế độ dẫn đường
     // Thêm sự kiện click trên bản đồ để hiển thị popup tạo điểm
     this.map.on('click', (e: any) => {
       if (!this.selectedMapId) {
@@ -638,32 +571,77 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     point: any,
     latlng: { lat: number; lon: number }
   ): L.Marker {
-    return L.marker([latlng.lat, latlng.lon], {
+    const marker = L.marker([latlng.lat, latlng.lon], {
       icon: L.icon({
         iconUrl: '../assets/icon/location-icon.png',
         iconSize: [40, 40],
       }),
-    })
-      .addTo(this.map)
-      .bindPopup(this.createPointPopupContent(point));
+    }).addTo(this.map);
+    // Xóa nút 'Dẫn đường tới đây' khỏi popup, chỉ còn thông tin điểm
+    marker.bindPopup(this.createPointPopupContent(point, false));
+    // Thêm sự kiện click marker để dẫn đường nếu đang bật chế độ
+    marker.on('click', (e: any) => {
+      if (this.isRoutingMode) {
+        // Lấy vị trí hiện tại của người dùng
+        if ('geolocation' in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const { latitude, longitude } = position.coords;
+              // Xóa route cũ nếu có
+              if (this.routeControl) {
+                this.map.removeLayer(this.routeControl);
+                this.routeControl = null;
+              }
+              // Xóa marker vị trí người dùng cũ nếu có
+              if (this.currentLocationMarker) {
+                this.map.removeLayer(this.currentLocationMarker);
+                this.currentLocationMarker = null;
+              }
+              // Tạo marker mới cho vị trí người dùng
+              this.currentLocationMarker = L.marker([latitude, longitude], {
+                icon: L.icon({
+                  iconUrl: '../assets/icon/current-location.png',
+                  iconSize: [40, 40],
+                }),
+              }).addTo(this.map);
+              // Vẽ đường đi từ vị trí hiện tại đến điểm này
+              this.drawRouteFromTo(
+                [latitude, longitude],
+                [latlng.lat, latlng.lon]
+              );
+            },
+            (error) => {
+              alert('Không lấy được vị trí hiện tại của bạn!');
+            }
+          );
+        } else {
+          alert('Trình duyệt không hỗ trợ định vị!');
+        }
+        // Không mở popup khi đang ở chế độ dẫn đường
+        e.originalEvent.preventDefault();
+        e.originalEvent.stopPropagation();
+      }
+    });
+    return marker;
   }
 
   // Hàm tối ưu để tạo nội dung popup cho điểm
-  private createPointPopupContent(point: any): string {
+  private createPointPopupContent(
+    point: any,
+    showButton: boolean = false
+  ): string {
     const truncatedName =
       point.name.length > 25 ? point.name.substring(0, 25) + '...' : point.name;
     const truncatedDescription =
       point.description && point.description.length > 150
         ? point.description.substring(0, 150) + '...'
         : point.description || '';
-
     const imageHtml = point.image_url
       ? `<img src="${point.image_url}" 
            style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid #222;"
            onerror="this.onerror=null; this.src='../assets/default-image.png';"
            loading="lazy" />`
       : '';
-
     return `
       <div style="display: flex; align-items: flex-start; width: 280px; padding: 8px;">
         <div style="flex: 2; padding: 4px; max-width: 150px;">
@@ -823,6 +801,64 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
         alert('Không thể lấy đường đi!');
         console.error('Lỗi khi lấy đường đi:', error);
       });
+  }
+
+  // Thêm hàm tạo control bật/tắt chế độ dẫn đường
+  private addRoutingControl(): void {
+    const routingButton = L.Control.extend({
+      options: {
+        position: 'bottomleft',
+      },
+      onAdd: (map: L.Map) => {
+        const btn = L.DomUtil.create('button', 'routing-button');
+        btn.innerHTML = '<span style="font-size:22px;">🧭</span>';
+        btn.style.width = '35px';
+        btn.style.height = '35px';
+        btn.style.backgroundColor = 'white';
+        btn.style.border = '5px solid rgba(255, 255, 255, 0.2)';
+        btn.style.borderRadius = '4px';
+        btn.style.cursor = 'pointer';
+        btn.style.display = 'flex';
+        btn.style.alignItems = 'center';
+        btn.style.justifyContent = 'center';
+        btn.title = 'Bật/tắt chế độ dẫn đường';
+        btn.style.transition = 'background 0.2s, color 0.2s';
+        btn.onclick = (event) => {
+          event.stopPropagation();
+          event.preventDefault();
+          this.isRoutingMode = !this.isRoutingMode;
+          if (this.isRoutingMode) {
+            btn.style.backgroundColor = '#51a245';
+            btn.innerHTML =
+              '<span style="font-size:22px; color: white;">🧭</span>';
+          } else {
+            btn.style.backgroundColor = 'white';
+            btn.innerHTML =
+              '<span style="font-size:22px; color: inherit;">🧭</span>';
+          }
+          if (!this.isRoutingMode && this.routeControl) {
+            this.map.removeLayer(this.routeControl);
+            this.routeControl = null;
+          }
+        };
+        // Đảm bảo các sự kiện chuột khác cũng không lan xuống map
+        [
+          'mousedown',
+          'mouseup',
+          'dblclick',
+          'touchstart',
+          'touchend',
+          'pointerdown',
+          'pointerup',
+        ].forEach((evt) => {
+          btn.addEventListener(evt, (e) => {
+            e.stopPropagation();
+          });
+        });
+        return btn;
+      },
+    });
+    new routingButton().addTo(this.map);
   }
 }
 
