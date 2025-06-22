@@ -1,7 +1,7 @@
 /* General Page Styles */
 ion-header {
     background: rgb(239, 240, 222);
-    padding: 8px;
+    padding: 24px 8px 8px 8px;
     position: relative;
     box-shadow: none;
 }
@@ -15,6 +15,7 @@ ion-content {
     display: flex;
     align-items: center;
     padding: 0 8px;
+    margin-top: 0;
 }
 
 .menu-avatar {

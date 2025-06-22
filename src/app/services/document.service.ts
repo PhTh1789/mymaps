@@ -56,6 +56,13 @@ export class DocumentService {
     return this.http.put<any>(`${this.ApiUrl}/down_vote?map_id=${map_id}`, {}, { headers });
   }
 
+  //hàm toggle like/unlike cho template
+  // Lần đầu gọi -> like, lần thứ 2 gọi -> unlike
+  toggleLike(map_id: number): Observable<any> {
+    const headers = this.authService.getAuthHeaders();
+    return this.http.put<any>(`${this.ApiUrl}/like?temp_id=${map_id}`, {}, { headers });
+  }
+
   //hàm lấy thông tin user đang đăng nhập
   getCurrentUser(): Observable<any> {
     const headers = this.authService.getAuthHeaders();

@@ -1,9 +1,6 @@
 <ion-header [translucent]="true">
   <div class="search-container">
     <!-- mở/tắt cái menu -->
-    <ion-avatar class="menu-avatar" (click)="openMenu()">
-      <img src="assets/img/avatar.jpg" />
-    </ion-avatar>
     <ion-searchbar
       [(ngModel)]="searchQuery"
       (ionInput)="onSearchChange($event)"
@@ -68,13 +65,13 @@
       <ion-content class="ion-padding">
         <form [formGroup]="createMapForm" (ngSubmit)="onSubmit()" class="create-map-form">
           <ion-item>
-            <ion-label position="stacked">Tên Map</ion-label>
-            <ion-input formControlName="name" type="text" placeholder="Nhập tên bản đồ"></ion-input>
+            <ion-label position="stacked">Tên Map <span style="color: #ff4444">*</span></ion-label>
+            <ion-input formControlName="name" type="text" placeholder="Nhập tên bản đồ (bắt buộc, tối thiểu 2 ký tự)"></ion-input>
           </ion-item>
           
           <ion-item>
             <ion-label position="stacked">Mô tả</ion-label>
-            <ion-textarea formControlName="description" rows="3" placeholder="Nhập mô tả cho bản đồ"></ion-textarea>
+            <ion-textarea formControlName="desc" rows="3" placeholder="Nhập mô tả cho bản đồ (không bắt buộc)"></ion-textarea>
           </ion-item>
 
           <ion-item class="image-upload-item">
@@ -82,18 +79,29 @@
             <div class="file-input-wrapper">
               <label class="custom-file-input">
                 <ion-icon name="image-outline"></ion-icon>
-                <span>{{ selectedFile ? selectedFile.name : 'Chọn hình ảnh' }}</span>
+                <span>{{ selectedFile ? selectedFile.name : 'Chọn hình ảnh (không bắt buộc)' }}</span>
                 <input type="file" (change)="onFileSelected($event)" accept="image/*" style="display: none;">
               </label>
+            </div>
+            <!-- Preview ảnh -->
+            <div *ngIf="imagePreview" class="image-preview">
+              <img [src]="imagePreview" alt="Preview" style="max-width: 200px; max-height: 150px; border-radius: 8px;">
             </div>
           </ion-item>
 
           <ion-item>
             <ion-label position="stacked">Danh mục</ion-label>
-            <ion-input formControlName="category" type="text" placeholder="Nhập danh mục"></ion-input>
+            <ion-input formControlName="category" type="text" placeholder="Nhập danh mục (không bắt buộc)"></ion-input>
           </ion-item>
 
-          <ion-button expand="block" type="submit">
+          <ion-item>
+            <ion-label position="stacked">Chia sẻ</ion-label>
+            <ion-toggle formControlName="share" slot="end">
+              <ion-label>{{ createMapForm.get('share')?.value ? 'Có' : 'Không' }}</ion-label>
+            </ion-toggle>
+          </ion-item>
+
+          <ion-button expand="block" type="submit" [disabled]="createMapForm.invalid">
             Tạo Map
           </ion-button>
         </form>

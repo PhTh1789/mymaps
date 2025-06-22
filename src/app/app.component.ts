@@ -111,24 +111,24 @@ export class AppComponent implements OnInit, OnDestroy {
           }
         }),
 
-      this.authService.username$.subscribe(name => {
-        this.username = name;
+      this.authService.userInfo$.subscribe(userInfo => {
+        this.username = userInfo.username;
         this.cdr.detectChanges();
       }),
 
-      this.authService.user_id$.subscribe(id => {
-        this.userId = id;
+      this.authService.userInfo$.subscribe(userInfo => {
+        this.userId = userInfo.userId;
         this.cdr.detectChanges();
       }),
 
-      this.authService.avatarUrl$.subscribe(url => {
-        this.avatarUrl = url || 'assets/img/avatar.jpg';
+      this.authService.userInfo$.subscribe(userInfo => {
+        this.avatarUrl = userInfo.avatar || 'assets/img/avatar.jpg';
         this.cdr.detectChanges();
       })
     );
 
     // Nếu user đang đăng nhập, lấy lại thông tin ban đầu từ localStorage
-    if (this.authService.getIsLoggedIn()) {
+    if (this.authService.isLoggedIn) {
       this.authService.refreshUserInfoFromStorage();
     }
 

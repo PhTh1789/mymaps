@@ -24,6 +24,7 @@
     "@capacitor/android": "7.3.0",
     "@capacitor/app": "7.0.1",
     "@capacitor/core": "7.3.0",
+    "@capacitor/geolocation": "^7.1.2",
     "@capacitor/haptics": "7.0.1",
     "@capacitor/keyboard": "7.0.1",
     "@capacitor/splash-screen": "^7.0.1",

@@ -18,14 +18,37 @@
           Phiên đăng nhập của bạn đã hết hạn. Vui lòng đăng nhập lại để tiếp tục sử dụng ứng dụng.
         </p>
         
+        <div class="countdown-container" *ngIf="countdown > 0">
+          <p class="countdown-text">
+            Tự động chuyển hướng sau <strong>{{ countdown }}</strong> giây
+          </p>
+          <ion-progress-bar 
+            [value]="countdown / 10" 
+            color="warning"
+            class="countdown-progress">
+          </ion-progress-bar>
+        </div>
+        
         <div class="button-container">
           <ion-button 
             expand="block" 
             (click)="onReLogin()"
             class="re-login-btn"
+            color="primary"
           >
             <ion-icon name="log-in-outline" slot="start"></ion-icon>
-            Đăng nhập lại
+            Đăng nhập lại ngay
+          </ion-button>
+          
+          <ion-button 
+            expand="block" 
+            (click)="onDismiss()"
+            class="dismiss-btn"
+            fill="outline"
+            color="medium"
+          >
+            <ion-icon name="close-outline" slot="start"></ion-icon>
+            Đóng
           </ion-button>
         </div>
       </div>

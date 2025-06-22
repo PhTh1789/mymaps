@@ -15,14 +15,12 @@ export class TokenCheckerService implements OnDestroy {
 
   private startTokenChecking() {
     // Chỉ kiểm tra nếu user đã đăng nhập
-    if (this.authService.getIsLoggedIn()) {
+    if (this.authService.isLoggedIn) {
       this.tokenCheckSubscription = interval(this.CHECK_INTERVAL).subscribe(() => {
-        if (this.authService.getIsLoggedIn()) {
-          // Kiểm tra token có hợp lệ không
-          if (!this.authService.isTokenValid()) {
-            console.log('Token đã hết hạn trong quá trình kiểm tra định kỳ');
-            this.authService.handleTokenExpiration();
-          }
+        if (this.authService.isLoggedIn) {
+          // Chỉ cần gọi isTokenValid, nó sẽ tự động kích hoạt
+          // luồng xử lý hết hạn nếu cần thiết.
+          this.authService.isTokenValid();
         } else {
           // User đã logout, dừng kiểm tra
           this.stopTokenChecking();

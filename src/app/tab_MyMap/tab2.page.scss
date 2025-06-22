@@ -1,7 +1,7 @@
 /* General Page Styles */
 ion-header {
     background: rgb(239, 240, 222);
-    padding: 8px;
+    padding: 24px 8px 8px 8px;
     position: relative;
     box-shadow: none;
 }
@@ -15,6 +15,7 @@ ion-content {
     display: flex;
     align-items: center;
     padding: 0 8px;
+    margin-top: 0;
 }
 
 .menu-avatar {
@@ -168,6 +169,16 @@ ion-searchbar {
                 display: none;
             }
         }
+
+        .image-preview {
+            margin-top: 12px;
+            text-align: center;
+            
+            img {
+                border: 2px solid #e0e0e0;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+        }
     }
 
     ion-button[type="submit"] {
@@ -264,4 +275,16 @@ ion-segment {
             color: inherit;
         }
     }
+}
+
+/* Toggle button styling */
+ion-toggle {
+    --background: #e0e0e0;
+    --background-checked: #4caf50;
+    --handle-background: #fff;
+    --handle-background-checked: #fff;
+    --handle-width: 20px;
+    --handle-height: 20px;
+    --handle-border-radius: 50%;
+    --handle-box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }

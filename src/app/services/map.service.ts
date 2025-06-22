@@ -1,131 +1,92 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, from } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
-import { AuthService } from './auth.service';
-
-// Định nghĩa kiểu dữ liệu cho bản đồ
-export interface MapItem {
-  name: string;
-  description?: string;
-  image?: string;
-  category?: string;
-  modified_at: string;
-  user_id: string;
-}
-
-export interface CreateMapRequest {
-  name: string;
-  description?: string;
-  image?: File;
-  category?: string;
-  shared: boolean;
-}
-
-// Interface cho request tạo điểm
-export interface CreatePointRequest {
-  map_id: string;
-  name: string;
-  description?: string | null;
-  image?: File | null;
-  geom: string; // "kinh độ vĩ độ"
-}
+import { BehaviorSubject, Observable, throwError } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
+import { MapApiService, MapItem, CreateMapRequest, CreatePointRequest, TemplateItem } from './map-api.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class MapService {
-  private apiMap = 'https://mymaps-app.onrender.com/map/mymaps';
-  private createMapUrl = 'https://mymaps-app.onrender.com/map/create_map';
+  private mapsSubject = new BehaviorSubject<MapItem[]>([]);
+  maps$ = this.mapsSubject.asObservable();
 
-  // Khởi tạo service
-  constructor(
-    private http: HttpClient,
-    private authService: AuthService
-  ) {}
+  private isLoadingSubject = new BehaviorSubject<boolean>(false);
+  isLoading$ = this.isLoadingSubject.asObservable();
 
-  // Lấy headers
-  private getHeaders(): HttpHeaders {
-    // Lấy token từ service authentication
-    const token = this.authService.getAccessToken();
-    // Nếu không có token thì báo lỗi
-    if (!token) {
-      throw new Error('Không có token');
-    }
-    // Trả về headers với token
-    return new HttpHeaders({
-      Authorization: `Bearer ${token}`
-    });
-  }
+  constructor(private mapApiService: MapApiService) {}
 
-  // Lấy danh sách bản đồ
-  getMaps(): Observable<MapItem[]> {
-
-    return from(Promise.resolve()).pipe(
-      
-      switchMap(() => {
-        const headers = this.getHeaders();
-        
-        return this.http.get<MapItem[]>(this.apiMap, { headers });
-      })
+  fetchUserMaps(): Observable<MapItem[]> {
+    this.isLoadingSubject.next(true);
+    return this.mapApiService.getMaps().pipe(
+      finalize(() => this.isLoadingSubject.next(false))
     );
   }
-  // Tạo bản đồ mới
+
+  // Method để lấy thông tin map theo ID
+  getMapById(mapId: string): Observable<MapItem> {
+    this.isLoadingSubject.next(true);
+    return this.mapApiService.getMapById(mapId).pipe(
+      finalize(() => this.isLoadingSubject.next(false))
+    );
+  }
+
   createMap(mapData: CreateMapRequest): Observable<any> {
-    return from(Promise.resolve()).pipe(
-      switchMap(() => {
-        // Lấy headers
-        const headers = this.getHeaders();
-        // Tạo FormData để gửi file
-        const formData = new FormData();
-        formData.append('name', mapData.name);
-        if (mapData.description) formData.append('description', mapData.description);
-        if (mapData.category) formData.append('category', mapData.category);
-        if (mapData.image) formData.append('image', mapData.image);
-  
-        return this.http.post(this.createMapUrl, formData, { headers });
-      })
+    // Validate name bắt buộc
+    if (!mapData.name || mapData.name.trim().length < 2) {
+      return throwError(() => new Error('Tên bản đồ phải có ít nhất 2 ký tự'));
+    }
+    
+    this.isLoadingSubject.next(true);
+    return this.mapApiService.createMap(mapData).pipe(
+      finalize(() => this.isLoadingSubject.next(false))
     );
   }
 
-  // Xóa bản đồ
+  updateMap(mapId: string, mapData: Partial<CreateMapRequest>): Observable<any> {
+    this.isLoadingSubject.next(true);
+    return this.mapApiService.updateMap(mapId, mapData).pipe(
+      finalize(() => this.isLoadingSubject.next(false))
+    );
+  }
+
   deleteMap(mapId: string): Observable<any> {
-    const headers = this.getHeaders();
-    const url = `https://mymaps-app.onrender.com/map/delete_map?map_id=${mapId}`;
-    return this.http.delete(url, { headers });
+    this.isLoadingSubject.next(true);
+    return this.mapApiService.deleteMap(mapId).pipe(
+      finalize(() => this.isLoadingSubject.next(false))
+    );
   }
 
-  // Thêm phương thức public map
   toPublicMap(mapId: string): Observable<any> {
-    const headers = this.getHeaders();
-    const url = `https://mymaps-app.onrender.com/template/to_public?map_id=${mapId}`;
-    return this.http.post(url, { map_id: mapId }, { headers });
+    return this.mapApiService.toPublicMap(mapId);
   }
 
-  // Thêm phương thức chuyển map về private
   toPrivateMap(mapId: string): Observable<any> {
-    const headers = this.getHeaders();
-    const url = `https://mymaps-app.onrender.com/template/to_private?map_id=${mapId}`;
-    return this.http.post(url, { map_id: mapId }, { headers });
+    this.isLoadingSubject.next(true);
+    return this.mapApiService.toPrivateMap(mapId).pipe(
+      finalize(() => this.isLoadingSubject.next(false))
+    );
   }
 
-  // Tạo điểm mới trên bản đồ
-  createPoint(mapID:string,pointData: CreatePointRequest): Observable<any> {
-    const headers = this.getHeaders();
-    const formData = new FormData();
-    formData.append('map_id', mapID);
-    formData.append('name', pointData.name);
-    if (pointData.description) formData.append('description', pointData.description);
-    if (pointData.image) formData.append('image', pointData.image);
-    formData.append('geom', pointData.geom);
-    const url = `https://mymaps-app.onrender.com/map/create_point?map_id=${mapID}`;
-    return this.http.post(url, formData, { headers });
+  // Method test để thử public map với các endpoint khác nhau
+  testPublicMap(mapId: string): Observable<any> {
+    this.isLoadingSubject.next(true);
+    return this.mapApiService.testPublicMap(mapId).pipe(
+      finalize(() => this.isLoadingSubject.next(false))
+    );
   }
 
-  // Xóa điểm trên bản đồ
+  createPoint(pointData: CreatePointRequest): Observable<any> {
+    return this.mapApiService.createPoint(pointData);
+  }
+
   deletePoint(pointId: string): Observable<any> {
-    const headers = this.getHeaders();
-    const url = `https://mymaps-app.onrender.com/map/delete_point?point_id=${pointId}`;
-    return this.http.delete(url, { headers });
+    return this.mapApiService.deletePoint(pointId);
+  }
+
+  getTemplates(): Observable<TemplateItem[]> {
+    this.isLoadingSubject.next(true);
+    return this.mapApiService.getTemplates().pipe(
+      finalize(() => this.isLoadingSubject.next(false))
+    );
   }
 }

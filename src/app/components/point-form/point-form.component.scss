@@ -32,6 +32,17 @@
     min-height: 42px;
   }
 
+  // Thông báo lỗi validation
+  .error-message {
+    margin: -8px 0 8px 0;
+    padding: 0 4px;
+    
+    ion-text {
+      font-size: 0.85em;
+      font-weight: 500;
+    }
+  }
+
   // Tùy chỉnh cho input file
   .image-upload-item {
     display: flex;

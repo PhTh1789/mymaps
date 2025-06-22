@@ -35,7 +35,7 @@ export class PointFormService {
 
   // Kiểm tra xem người dùng hiện tại có quyền tạo điểm trên map này không
   canCreatePoint(): boolean {
-    const currentUserId = this.authService.getUserId();
+    const currentUserId = this.authService.currentUserInfo?.userId;
     const mapOwnerId = this.selectedMapOwnerIdSubject.value;
     return currentUserId == mapOwnerId;
   }

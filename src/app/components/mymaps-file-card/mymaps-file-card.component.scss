@@ -40,18 +40,40 @@
 
 // Specific colors for button icons
 .public-map-btn ion-icon {
-  color: #007aff;
+  color: #007aff; // Màu xanh cho private
 }
 
 .delete-map-btn ion-icon {
   color: #ff3b30;
 }
 
-// Styling for the "shared" state
+// Styling for the "shared" state - màu xám khi đã public
 .public-map-btn.shared {
   background: #f0f0f0;
   ion-icon {
-    color: #888;
+    color: #888; // Màu xám khi đã public
+  }
+  
+  &:hover {
+    background: #e0e0e0;
+    ion-icon {
+      color: #666;
+    }
+  }
+}
+
+// Styling for the "not shared" state - màu xanh cho private
+.public-map-btn.not-shared {
+  background: white;
+  ion-icon {
+    color: #007aff; // Màu xanh cho private
+  }
+  
+  &:hover {
+    background: #f8f9fa;
+    ion-icon {
+      color: #0056b3;
+    }
   }
 }
 
@@ -65,4 +87,29 @@
         transform: none;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
+}
+
+// Placeholder khi không có ảnh
+.no-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border-radius: 4px;
+  color: #666;
+  font-size: 12px;
+  
+  ion-icon {
+    font-size: 24px;
+    margin-bottom: 4px;
+    color: #999;
+  }
+  
+  span {
+    font-size: 10px;
+    text-align: center;
+  }
 } 

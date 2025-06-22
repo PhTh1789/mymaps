@@ -45,7 +45,7 @@ export class ProfilePage implements OnInit {
   // Lấy dữ liệu người dùng từ server fecthUserInfo()
   fetchUserInfo() {
     const headers = this.authService.getAuthHeaders();
-    this.http.get<any>('https://mymaps-app.onrender.com/users/me', { headers }).subscribe({ //lấy dữ liệu <get> từ users/me -> kết quả trả về -> lấy kết quả đó
+    this.http.get<any>('https://myapp-r4xt.onrender.com/users/me', { headers }).subscribe({ //lấy dữ liệu <get> từ users/me -> kết quả trả về -> lấy kết quả đó
       next: (res) => {
         // Gán dữ liệu trả về
         this.user.id = res.user_id;
@@ -57,8 +57,13 @@ export class ProfilePage implements OnInit {
         this.avatarPreview = this.user.avatar;
 
         // Đồng bộ với AuthService
-        this.authService.setUserInfo(res.user_id, res.username);
-        this.authService.setAvatarUrl(this.user.avatar);
+        this.authService.updateUserInfo({
+          userId: res.user_id,
+          username: res.username,
+          avatar: res.avatar || null,
+          email: res.user_email,
+          phone: res.user_phone
+        });
 
         // Lưu localStorage
         localStorage.setItem('username', this.user.username);
@@ -109,10 +114,16 @@ export class ProfilePage implements OnInit {
     avatar: this.user.avatar,
   };
 
-  this.http.put('https://mymaps-app.onrender.com/users/me', updatedData, { headers }).subscribe({
+  this.http.put('https://myapp-r4xt.onrender.com/users/me', updatedData, { headers }).subscribe({
     next: (res) => {
       alert('Cập nhật thành công');
       this.isEditing = false;
+
+      // Cập nhật AuthService
+      this.authService.updateUserInfo({
+        email: this.user.email,
+        avatar: this.user.avatar
+      });
 
       // Lưu localStorage
       localStorage.setItem('user_email', this.user.email);

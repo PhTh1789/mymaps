@@ -7,12 +7,8 @@ import { IonicModule } from '@ionic/angular';
 
 interface likeresponse {
   message: string;
-  like: number;
-}
-
-interface dislikeresponse {
-  message: string;
-  dislike: number;
+  liked: boolean;
+  no_like: number;
 }
 
 @Component({
@@ -26,74 +22,81 @@ export class FileCardComponent {
   @Output() cardClick = new EventEmitter<string>(); // đầu ra của sự kiện cardclick, phát ra chuỗi ký tự id
   @Output() deleted = new EventEmitter<void>();
   @Output() reloadTabs = new EventEmitter<void>();
-  hasLiked: boolean = false; // biến để kiểm tra người dùng đã like chưa
-  hasDisliked: boolean = false; // biến để kiểm tra người dùng đã dislike chưa
 
   constructor(
     private documentService: DocumentService,
     private mapShareService: MapShareService,
     private navCtrl: NavController
   ) {}
+
+  // Method để lấy URL ảnh, hỗ trợ cả img và image_url
+  getImageUrl(): string | null {
+    if (!this.file) return null;
+    
+    // Ưu tiên image_url trước, sau đó mới đến img
+    if (this.file.image_url && this.file.image_url.trim() !== '') {
+      return this.file.image_url;
+    }
+    
+    if (this.file.img && this.file.img.trim() !== '') {
+      // Nếu img là base64, thêm prefix
+      if (this.file.img.startsWith('data:')) {
+        return this.file.img;
+      }
+      // Nếu là URL, trả về trực tiếp
+      if (this.file.img.startsWith('http')) {
+        return this.file.img;
+      }
+      // Nếu là base64 không có prefix, thêm prefix
+      return `data:image/jpeg;base64,${this.file.img}`;
+    }
+    
+    return null;
+  }
+
+  // Method xử lý lỗi khi load ảnh
+  onImageError(event: any) {
+    console.log('Lỗi load ảnh:', event);
+    // Có thể thêm logic xử lý lỗi ở đây
+  }
+
   // khi click vào thẻ, sẽ chuyển đến trang explore và hiển thị bản đồ
   onClickCard() {
-    if (this.file && this.file.map_id) {
-      this.mapShareService.setMapId(this.file.map_id);
+    // Sử dụng map_id từ TemplateItem interface
+    const mapId = this.file?.map_id || this.file?.id;
+    if (this.file && mapId) {
+      this.mapShareService.setMapId(mapId.toString());
       this.navCtrl.navigateRoot(['/tabs/tab1']);
     }
     // Khi thẻ được bấm, phát ra(evenemiter) sự kiện kèm theo ID của tệp
-    if (this.file && this.file.id) {
-      this.cardClick.emit(this.file.id); //emit() hàm gửi thông báo sự kiện click và gửi id của tài liệu
+    if (this.file && mapId) {
+      this.cardClick.emit(mapId.toString());
     }
   }
 
+  // Logic like mới: toggle like/unlike
   onLike() {
-    if (this.file && this.file.map_id && !this.hasLiked) {
-      this.documentService.upVote(this.file.map_id).subscribe({
+    const mapId = this.file?.map_id || this.file?.id;
+    if (this.file && mapId) {
+      this.documentService.toggleLike(mapId).subscribe({
         next: (response: likeresponse) => {
-          if (response.message === 'You voted this map') {
-            console.log('đã like');
-            this.hasLiked = true; // Đánh dấu đã Like
-            return;
-          } else {
-            this.file.like = this.file.like + 1;
-            console.log('Like thành công');
-          }
+          // Cập nhật trạng thái liked và số lượng like
+          this.file.liked = response.liked;
+          this.file.no_like = response.no_like;
+          console.log('Toggle like thành công:', response);
         },
-        error: (err) => {
-          console.error('Lỗi khi Like:', err);
+        error: (err: any) => {
+          console.error('Lỗi khi toggle like:', err);
         },
       });
-    } else {
-      console.log('Đã Like rồi');
-    }
-  }
-
-  onDislike() {
-    if (this.file && this.file.map_id && !this.hasDisliked) {
-      this.documentService.downVote(this.file.map_id).subscribe({
-        next: (response: dislikeresponse) => {
-          if (response.message === 'You voted this map') {
-            console.log('Đã Dislike');
-            this.hasDisliked = true; // Đánh dấu đã Dislike
-            return;
-          } else {
-            this.file.dislike = this.file.dislike + 1;
-            console.log('Dislike thành công');
-          }
-        },
-        error: (err) => {
-          console.error('Lỗi khi Dislike:', err);
-        },
-      });
-    } else {
-      console.log('đã Dislike rồi');
     }
   }
 
   onImportTemplate(event: Event) {
     event.stopPropagation();
-    if (this.file && this.file.map_id) {
-      this.documentService.importTemplate(this.file.map_id).subscribe({
+    const mapId = this.file?.map_id || this.file?.id;
+    if (this.file && mapId) {
+      this.documentService.importTemplate(mapId).subscribe({
         next: (res) => {
           console.log('Import thành công:', res);
         },

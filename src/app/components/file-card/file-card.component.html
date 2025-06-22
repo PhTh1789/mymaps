@@ -1,26 +1,37 @@
 <!-- cấu trúc thẻ tài liệu, click chạy hàm onClickCard() -->
 <div class="file-card-container" (click)="onClickCard()">
   <div class="map-box">
-    <img *ngIf="file?.image_url" [src]="file.image_url" alt="map image" style="width:100%;height:100%;object-fit:cover;border-radius:4px;" />
+    <img 
+      *ngIf="getImageUrl()" 
+      [src]="getImageUrl()" 
+      alt="map image" 
+      style="width:100%;height:100%;object-fit:cover;border-radius:4px;"
+      (error)="onImageError($event)"
+      onerror="this.onerror=null; this.src='assets/img/default-map.png';"
+    />
+    <div *ngIf="!getImageUrl()" class="no-image-placeholder">
+      <ion-icon name="map-outline"></ion-icon>
+      <span>Không có ảnh</span>
+    </div>
   </div>
   <div class="file-info">
     <div class="title-section">
-      <h3>{{ truncateName( file?.map_name ) }}</h3>
+      <h3>{{ truncateName( file?.name ) }}</h3>
     </div>
     <div class="details-section">
-      <p>{{ truncateText( file?.description ) }}</p>
-      <p>Nguồn: {{ file?.user_name }}</p>
+      <p>{{ truncateText( file?.desc ) }}</p>
+      <p>Tác giả: {{ file?.author || 'Unknown' }}</p>
     </div>
   </div>
   <div class="like-dislike-group">
     <button class="download-btn" (click)="onImportTemplate($event)">
       <ion-icon class="download-icon" src="../assets/icon/download.svg"></ion-icon>
     </button>
-    <button class="like-btn" (click)="onLike(); $event.stopPropagation()"> <!-- stopPropagation không để nhiều sự kiện xảy ra khi click -->
-      <ion-icon name="thumbs-up"></ion-icon> {{ file?.like }}
-    </button>
-    <button class="dislike-btn" (click)="onDislike(); $event.stopPropagation()">
-      <ion-icon name="thumbs-down"></ion-icon> {{ file?.dislike }} 
+    <button 
+      class="like-btn" 
+      (click)="onLike(); $event.stopPropagation()"
+      [ngClass]="{ 'liked': file?.liked, 'not-liked': !file?.liked }">
+      <ion-icon name="thumbs-up"></ion-icon> {{ file?.no_like || 0 }}
     </button>
   </div>
 </div>

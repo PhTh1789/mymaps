@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { Observable, BehaviorSubject, tap, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Observable, tap, catchError, switchMap, timer, throwError, of } from 'rxjs';
+import { UserStateService } from '../services/user-state.service';
+import { TokenService } from '../services/token.service';
+import { AuthApiService, LoginCredentials, RegisterData } from '../services/auth-api.service';
 
 // Khởi tạo ứng dụng
 @Injectable({
@@ -9,200 +10,62 @@ import { catchError } from 'rxjs/operators';
 })
 
 export class AuthService {
-  private apiUrl = 'https://mymaps-app.onrender.com/';
-
-  //Trạng thái đăng nhập của loggedIn sẽ là false từ ban đầu khi chưa đăng nhập
-  private loggedIn = new BehaviorSubject<boolean>(false);
-
-  //Cho phép các component bên ngoài subcrise
-  isLoggedIn$ = this.loggedIn.asObservable();
-
-  //Lưu biến username
-  private username = new BehaviorSubject<string | null>(null);
-  username$ = this.username.asObservable();
-
-  //Cho phép các component bên ngoài subcrise
-  private userId = new BehaviorSubject<string | null>(null);
-  user_id$ = this.userId.asObservable();
-
-  //Lưu biến avatar vào localstorage
-  private avatarUrlSubject = new BehaviorSubject<string | null>(localStorage.getItem('user_avatar'));
-  avatarUrl$ = this.avatarUrlSubject.asObservable();
-
-  // Subject để thông báo token hết hạn
-  private tokenExpiredSubject = new BehaviorSubject<boolean>(false);
-  tokenExpired$ = this.tokenExpiredSubject.asObservable();
-
-  //Khởi tạo khi vừa thực hiện
-  constructor(private http: HttpClient) {
-    const savedLogin = localStorage.getItem('loggedIn') === 'true';
-    this.loggedIn.next(savedLogin);
-
-    this.initializeUserInfo(); // Load thông tin khi service khởi tạo
+  constructor(
+    private userStateService: UserStateService,
+    private tokenService: TokenService,
+    private authApiService: AuthApiService
+  ) {
+    // Không tự động logout nữa, để TokenExpiredModalComponent xử lý
+    // this.tokenService.tokenExpired$.subscribe(expired => {
+    //   if (expired) {
+    //     console.log('AuthService: Đã nhận được sự kiện token hết hạn, đang đăng xuất...');
+    //     this.logout();
+    //   }
+    // });
   }
 
-  //Lấy thông tin từ localStorage
-  initializeUserInfo(): void {
-    const savedUserId = localStorage.getItem('userId');
-    const savedUsername = localStorage.getItem('username');
-    const savedAvatar = localStorage.getItem('user_avatar');
+  // Expose observables from child services
+  get isLoggedIn$() { return this.userStateService.isLoggedIn$; }
+  get userInfo$() { return this.userStateService.userInfo$; }
+  get tokenExpired$() { return this.tokenService.tokenExpired$; }
 
-    if (savedUserId) this.userId.next(savedUserId);
-    if (savedUsername) this.username.next(savedUsername);
-    if (savedAvatar) this.avatarUrlSubject.next(savedAvatar);
+  // Convenience getters
+  get isLoggedIn(): boolean { return this.userStateService.isLoggedIn(); }
+  get currentUserInfo() { return this.userStateService.getCurrentUserInfo(); }
+  getAccessToken(): string | null { return this.tokenService.getAccessToken(); }
+
+  /**
+   * Đăng ký tài khoản mới
+   */
+  register(data: RegisterData): Observable<any> {
+    return this.authApiService.register(data);
   }
 
-  //Cập nhật avatar
-  setAvatarUrl(url: string | null): void {
-    if (url) {
-      localStorage.setItem('user_avatar', url);
-    } else {
-      localStorage.removeItem('user_avatar');
-    }
-    this.avatarUrlSubject.next(url);
-  }
+  /**
+   * Đăng nhập và lưu thông tin người dùng
+   */
+  login(credentials: LoginCredentials): Observable<any> {
+    return this.authApiService.login(credentials).pipe(
+      tap((response) => {
+        if (response?.access_token) {
+          // Lưu token
+          this.tokenService.setAccessToken(response.access_token);
+          this.userStateService.setLoggedIn(true);
+          this.tokenService.resetTokenExpiredStatus();
 
-  // Kiểm tra token có hợp lệ không
-  isTokenValid(): boolean {
-    const token = this.getAccessToken();
-    if (!token) return false;
-
-    try {
-      // Decode JWT token để kiểm tra expiration
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const currentTime = Date.now() / 1000;
-      
-      if (payload.exp && payload.exp < currentTime) {
-        this.handleTokenExpiration();
-        return false;
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Lỗi khi kiểm tra token:', error);
-      this.handleTokenExpiration();
-      return false;
-    }
-  }
-
-  // Xử lý khi token hết hạn
-  handleTokenExpiration(): void {
-    console.log('Token đã hết hạn, đăng xuất người dùng');
-    this.logout();
-    this.tokenExpiredSubject.next(true);
-  }
-
-  // Reset trạng thái token expired
-  resetTokenExpiredStatus(): void {
-    this.tokenExpiredSubject.next(false);
-  }
-
-  // Kiểm tra và refresh token nếu cần
-  checkAndRefreshToken(): Observable<boolean> {
-    if (!this.isTokenValid()) {
-      return throwError(() => new Error('Token không hợp lệ'));
-    }
-
-    // Gọi API để kiểm tra token
-    return this.http.get<any>(`${this.apiUrl}users/me`, { 
-      headers: this.getAuthHeaders() 
-    }).pipe(
-      tap(() => {
-        // Token vẫn hợp lệ
-        this.resetTokenExpiredStatus();
-      }),
-      catchError((error: HttpErrorResponse) => {
-        if (error.status === 401 || error.status === 403) {
-          this.handleTokenExpiration();
-        }
-        return throwError(() => error);
-      })
-    );
-  }
-
-  getIsLoggedIn(): boolean {
-    return this.loggedIn.value;
-  }
-
-  getUsername(): string | null {
-    return this.username.value;
-  }
-
-  getUserId(): string | null {
-    return this.userId.value;
-  }
-
-  //Lưu thông tin người dùng
-  setUserInfo(userId: string, username: string): void {
-    this.userId.next(userId);
-    this.username.next(username);
-    localStorage.setItem('userId', userId);
-    localStorage.setItem('username', username);
-  }
-
-  //Làm mới thông tin người dùng từ LocalStorage
-  refreshUserInfoFromStorage(): void {
-    const userId = localStorage.getItem('userId') || '';
-    const username = localStorage.getItem('username') || '';
-    const avatar = localStorage.getItem('user_avatar') || '';
-
-    this.setUserInfo(userId, username);
-    this.setAvatarUrl(avatar);
-  }
-
-  //Gửi thông tin đăng ký
-  register(data: { username: string; email: string; password: string }): Observable<any> {
-    const body = new URLSearchParams();
-    body.set('user_name', data.username);
-    body.set('user_password', data.password);
-    body.set('user_email', data.email);
-
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Accept': 'application/json'
-    });
-
-    return this.http.post(`${this.apiUrl}user/signin`, body.toString(), { headers });
-  }
-
-  //Gửi thông tin đăng nhập
-  login(credentials: { username: string; password: string }): Observable<any> {
-    const body = new URLSearchParams();
-    body.set('username', credentials.username);
-    body.set('password', credentials.password);
-
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Accept': 'application/json'
-    });
-
-    return this.http.post(`${this.apiUrl}token`, body.toString(), { headers }).pipe(
-      tap((response: any) => {
-        if (response && response.access_token) {
-          localStorage.setItem('loggedIn', 'true');
-          localStorage.setItem('access_token', response.access_token);
-          this.loggedIn.next(true);
-          this.resetTokenExpiredStatus(); // Reset trạng thái token expired
-
-          // Gọi API /users/me để lấy thông tin người dùng chi tiết
-          const authHeaders = new HttpHeaders({
-            'Authorization': `Bearer ${response.access_token}`,
-            'Accept': 'application/json'
-          });
-
-          this.http.get<any>(`${this.apiUrl}users/me`, { headers: authHeaders }).subscribe({
-            next: (res) => {
-              localStorage.setItem('userId', res.user_id);
-              localStorage.setItem('username', res.username);
-              localStorage.setItem('user_email', res.user_email || '');
-              localStorage.setItem('user_phone', res.user_phone || '');
-              localStorage.setItem('user_avatar', res.avatar || '');
-
-              this.setUserInfo(res.user_id, res.username);
-              this.setAvatarUrl(res.avatar || null);
+          // Lấy thông tin người dùng chi tiết
+          this.authApiService.getUserInfo(response.access_token).subscribe({
+            next: (userInfo) => {
+              this.userStateService.setUserInfo({
+                userId: userInfo.user_id,
+                username: userInfo.username,
+                avatar: userInfo.avatar || null,
+                email: userInfo.user_email,
+                phone: userInfo.user_phone
+              });
             },
             error: (err) => {
-              console.error('Lỗi khi gọi /users/me:', err);
+              console.error('Lỗi khi lấy thông tin người dùng:', err);
             }
           });
         }
@@ -210,50 +73,87 @@ export class AuthService {
     );
   }
 
-  //Đăng xuất và xóa thông tin khỏi localStorage
+  /**
+   * Đăng xuất và xóa tất cả dữ liệu
+   */
   logout(): void {
-    // Xóa tất cả các key liên quan
-    localStorage.removeItem('loggedIn');
-    localStorage.removeItem('username');
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('userId');
-    localStorage.removeItem('user_avatar');
-    localStorage.removeItem('user_email');
-    localStorage.removeItem('user_phone');
-    localStorage.removeItem('displayName');
-
-    // Reset các BehaviorSubject về null/false
-    this.loggedIn.next(false);
-    this.username.next(null);
-    this.userId.next(null);
-    this.avatarUrlSubject.next(null);
+    this.tokenService.removeAccessToken();
+    this.userStateService.clearUserData();
+    console.log('Đã đăng xuất thành công');
   }
 
-  getAccessToken(): string | null {
-    return localStorage.getItem('access_token');
+  /**
+   * Kiểm tra tính hợp lệ của token
+   */
+  isTokenValid(): boolean {
+    return this.tokenService.isTokenValid();
   }
 
-  getAuthHeaders(): HttpHeaders {
-    const token = this.getAccessToken();
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    });
-  }
-
-  // Cập nhật trạng thái Login
-  setLoginStatus(status: boolean): void {
-    this.loggedIn.next(status);
-    localStorage.setItem('loggedIn', status.toString());
-  }
-
-  // Cập nhật trạng thái username
-  setUsername(username: string | null): void {
-    this.username.next(username);
-    if (username) {
-      localStorage.setItem('username', username);
-    } else {
-      localStorage.removeItem('username');
+  /**
+   * Kiểm tra và refresh token nếu cần
+   */
+  checkAndRefreshToken(): Observable<boolean> {
+    if (!this.isLoggedIn) {
+      return throwError(() => new Error('Chưa đăng nhập'));
     }
+
+    if (this.tokenService.isTokenValid()) {
+      return of(true);
+    }
+
+    // Token không hợp lệ, kích hoạt token expired modal
+    this.tokenService.handleTokenExpiration();
+    return throwError(() => new Error('Token đã hết hạn'));
+  }
+
+  /**
+   * Lấy headers cho API calls
+   */
+  getAuthHeaders() {
+    return this.tokenService.getAuthHeaders();
+  }
+
+  /**
+   * Reset trạng thái token expired
+   */
+  resetTokenExpiredStatus(): void {
+    this.tokenService.resetTokenExpiredStatus();
+  }
+
+  /**
+   * Cập nhật thông tin người dùng
+   */
+  updateUserInfo(userInfo: Partial<{ userId: string; username: string; avatar: string | null; email?: string; phone?: string }>): void {
+    this.userStateService.setUserInfo(userInfo);
+  }
+
+  /**
+   * Làm mới thông tin từ localStorage
+   */
+  refreshUserInfoFromStorage(): void {
+    // UserStateService đã tự động load từ localStorage trong constructor
+    // Method này có thể được sử dụng để force refresh nếu cần
+  }
+
+  // Method để retry action sau khi token được refresh
+  retryAction<T>(action: () => Observable<T>): Observable<T> {
+    return action().pipe(
+      catchError((error: any) => {
+        if (error.status === 401 || error.status === 403) {
+          // Token expired, đợi một chút rồi thử lại
+          return timer(1000).pipe(
+            switchMap(() => {
+              // Kiểm tra xem user đã đăng nhập lại chưa
+              if (this.isLoggedIn) {
+                return action(); // Thử lại action
+              } else {
+                return throwError(() => new Error('Phiên đăng nhập đã hết hạn'));
+              }
+            })
+          );
+        }
+        return throwError(() => error);
+      })
+    );
   }
 }

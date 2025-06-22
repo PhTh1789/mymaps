@@ -4,17 +4,17 @@
       <h1 class="auth-form-title">ĐĂNG KÝ TÀI KHOẢN</h1>
 
       <!-- Tên người dùng -->
-      <div class="auth-input-control" [ngClass]="{ 'error': submitted && !username }">
-        <label for="username">Tên người dùng</label>
+      <div class="auth-input-control" [ngClass]="{ 'error': submitted && !user_name }">
+        <label for="user_name">Tên người dùng</label>
         <input 
-          id="username" 
-          name="username" 
+          id="user_name" 
+          name="user_name" 
           type="text" 
-          [(ngModel)]="username" 
+          [(ngModel)]="user_name" 
           placeholder="Hãy nhập tên người dùng"
           required 
         />
-        <div class="error" *ngIf="submitted && !username">Tên người dùng là bắt buộc</div>
+        <div class="error" *ngIf="submitted && !user_name">Tên người dùng là bắt buộc</div>
       </div>
 
       <!-- Email -->
@@ -32,14 +32,14 @@
       </div>
 
       <!-- Mật khẩu -->
-      <div class="auth-input-control" [ngClass]="{ 'error': submitted && password.length < 8 }">
-        <label for="password">Mật khẩu</label>
+      <div class="auth-input-control" [ngClass]="{ 'error': submitted && user_pass.length < 8 }">
+        <label for="user_pass">Mật khẩu</label>
         <div class="password-input-container">
           <input 
             [type]="showPassword ? 'text' : 'password'"
-            id="password" 
-            name="password" 
-            [(ngModel)]="password" 
+            id="user_pass" 
+            name="user_pass" 
+            [(ngModel)]="user_pass" 
             placeholder="Hãy nhập mật khẩu (ít nhất 8 ký tự)"
             required 
           />
@@ -55,11 +55,11 @@
             ></ion-icon>
           </button>
         </div>
-        <div class="error" *ngIf="submitted && password.length < 8">Mật khẩu phải có ít nhất 8 ký tự</div>
+        <div class="error" *ngIf="submitted && user_pass.length < 8">Mật khẩu phải có ít nhất 8 ký tự</div>
       </div>
 
       <!-- Nhập lại mật khẩu -->
-      <div class="auth-input-control" [ngClass]="{ 'error': submitted && password !== password2 }">
+      <div class="auth-input-control" [ngClass]="{ 'error': submitted && user_pass !== password2 }">
         <label for="password2">Nhập lại mật khẩu</label>
         <div class="password-input-container">
           <input 
@@ -82,7 +82,7 @@
             ></ion-icon>
           </button>
         </div>
-        <div class="error" *ngIf="submitted && password !== password2">Mật khẩu không trùng nhau</div>
+        <div class="error" *ngIf="submitted && user_pass !== password2">Mật khẩu không trùng nhau</div>
       </div>
 
       <!-- Nút Đăng ký -->

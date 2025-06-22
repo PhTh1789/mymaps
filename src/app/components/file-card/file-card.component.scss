@@ -6,6 +6,31 @@
   margin-bottom: -10px;
 }
 
+// Placeholder khi không có ảnh
+.no-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border-radius: 4px;
+  color: #666;
+  font-size: 12px;
+  
+  ion-icon {
+    font-size: 24px;
+    margin-bottom: 4px;
+    color: #999;
+  }
+  
+  span {
+    font-size: 10px;
+    text-align: center;
+  }
+}
+
 //nút download
 .download-btn {
   display: flex;
@@ -53,6 +78,24 @@
 
 .like-btn {
   background-color: #51a245;
+}
+
+// Styling cho trạng thái liked (xám màu)
+.like-btn.liked {
+  background-color: #888;
+  
+  &:hover {
+    background-color: #666;
+  }
+}
+
+// Styling cho trạng thái not-liked (sáng màu)
+.like-btn.not-liked {
+  background-color: #51a245;
+  
+  &:hover {
+    background-color: #3d7a32;
+  }
 }
 
 .dislike-btn {

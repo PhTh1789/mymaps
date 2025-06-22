@@ -5,7 +5,6 @@ ion-toolbar ion-title {
   font-weight: bold;
 }
 
-
 .feedback-card {
   border-radius: 16px;
   padding: 16px;
@@ -34,18 +33,98 @@ h2 {
   text-align: center;
   font-weight: 600;
   color: #333;
+  margin-bottom: 20px;
 }
 
 .star-rating {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 20px 0;
+  
   ion-icon {
-    font-size: 28px;
-    margin: 0 4px;
+    font-size: 32px;
     cursor: pointer;
-    transition: transform 0.2s;
+    transition: all 0.2s ease;
+    color: #ffc107;
   }
 
   ion-icon:hover {
-    transform: scale(1.2);
+    transform: scale(1.1);
+    color: #ff9800;
+  }
+  
+  ion-icon[name="star"] {
+    color: #ffc107;
+  }
+  
+  ion-icon[name="star-outline"] {
+    color: #ddd;
+  }
+}
+
+.rating-text {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 500;
+  color: #666;
+  margin: 10px 0 20px 0;
+}
+
+ion-item {
+  --border-radius: 8px;
+  --background: #f8f9fa;
+  margin: 16px 0;
+  
+  ion-label {
+    font-weight: 600;
+    color: #333;
+  }
+  
+  ion-textarea {
+    --padding-start: 12px;
+    --padding-end: 12px;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+ion-button {
+  margin-top: 20px;
+  height: 48px;
+  font-weight: 600;
+  font-size: 16px;
+  --border-radius: 8px;
+  
+  &:disabled {
+    opacity: 0.6;
+  }
+  
+  ion-spinner {
+    margin-right: 8px;
+  }
+}
+
+// Responsive design
+@media (max-width: 480px) {
+  .feedback-card {
+    margin: 8px;
+    padding: 12px;
+  }
+  
+  .star-rating ion-icon {
+    font-size: 28px;
+  }
+  
+  h2 {
+    font-size: 18px;
+  }
+  
+  .rating-text {
+    font-size: 14px;
   }
 }
 

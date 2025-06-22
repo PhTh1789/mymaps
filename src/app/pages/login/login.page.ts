@@ -63,11 +63,8 @@ export class LoginPage {
       next: (res: any) => {
         // Kiểm tra token
         if (res.access_token) {
-          // Lưu trạng thái login
-          this.authService.setLoginStatus(true);
-          this.authService.setUsername(this.username);
-
-          // Điều hướng
+          // AuthService đã tự động xử lý việc lưu trạng thái và thông tin người dùng
+          // Chỉ cần điều hướng
           this.router.navigate(['/tabs']);
         } else {
           this.loginError = 'Đăng nhập thất bại';
@@ -75,7 +72,11 @@ export class LoginPage {
       },
       error: (error: HttpErrorResponse) => {
         console.error('Đăng nhập thất bại:', error);
-        this.loginError = error.error?.detail || 'Tài khoản hoặc mật khẩu không đúng';
+        if (error.error && typeof error.error.detail === 'string') {
+          this.loginError = error.error.detail;
+        } else {
+          this.loginError = 'Tài khoản hoặc mật khẩu không đúng';
+        }
         alert(this.loginError);
       }
     });

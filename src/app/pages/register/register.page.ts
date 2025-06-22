@@ -14,9 +14,9 @@ import { HttpErrorResponse } from '@angular/common/http';
   imports: [IonicModule, CommonModule, FormsModule, RouterModule]
 })
 export class RegisterPage {
-  username: string = '';
+  user_name: string = '';
+  user_pass: string = '';
   email: string = '';
-  password: string = '';
   password2: string = '';
   submitted = false;
   registerError: string = '';
@@ -40,7 +40,7 @@ export class RegisterPage {
     this.submitted = true;
     this.registerError = '';
 
-    if (!this.username || !this.email || !this.password || !this.password2) {
+    if (!this.user_name || !this.email || !this.user_pass || !this.password2) {
       this.registerError = 'Vui lòng điền đầy đủ thông tin.';
       alert(this.registerError);
       return;
@@ -52,22 +52,22 @@ export class RegisterPage {
       return;
     }
 
-    if (this.password.length < 8) {
+    if (this.user_pass.length < 8) {
       this.registerError = 'Mật khẩu phải từ 8 ký tự trở lên.';
       alert(this.registerError);
       return;
     }
 
-    if (this.password !== this.password2) {
+    if (this.user_pass !== this.password2) {
       this.registerError = 'Mật khẩu nhập lại không khớp.';
       alert(this.registerError);
       return;
     }
 
     const payload = {
-      username: this.username,
-      email: this.email,
-      password: this.password
+      user_name: this.user_name,
+      user_pass: this.user_pass,
+      email: this.email
     };
 
     //Lấy hành động từ authService

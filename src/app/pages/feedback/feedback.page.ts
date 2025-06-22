@@ -2,74 +2,92 @@ import { Component, inject } from '@angular/core';
 import { IonicModule, ModalController, AlertController } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpHeaders, HttpClientModule } from '@angular/common/http';
-import { AuthService } from 'src/app/services/auth.service';
+import { firstValueFrom } from 'rxjs';
+import { FeedbackService, FeedbackRequest } from '../../services/feedback.service';
 
 @Component({
   selector: 'app-feedback',
   standalone: true,
   templateUrl: './feedback.page.html',
   styleUrls: ['./feedback.page.scss'],
-  imports: [IonicModule, CommonModule, FormsModule, HttpClientModule]
+  imports: [IonicModule, CommonModule, FormsModule]
 })
 export class FeedbackPage {
-  rating = 1;
-  feedbackText = '';
+  id: number = 0;
+  star: number = 1;
+  desc: string = '';
+  isSubmitting: boolean = false;
 
   private modalCtrl = inject(ModalController);
-  private http = inject(HttpClient);
   private alertCtrl = inject(AlertController);
-  private authService: AuthService = inject(AuthService);
+  private feedbackService: FeedbackService = inject(FeedbackService);
 
   setRating(value: number) {
-    this.rating = value;
+    this.star = value;
   }
 
   async submitFeedback() {
-    const token = this.authService.getAccessToken();
-    if (!token) {
+    if (this.isSubmitting) return;
+
+    const feedbackData: FeedbackRequest = {
+      id: this.id,
+      star: this.star,
+      desc: this.desc.trim()
+    };
+
+    // Validate input using service
+    const validation = this.feedbackService.validateFeedback(feedbackData);
+    if (!validation.isValid) {
       const alert = await this.alertCtrl.create({
-        header: 'Chưa đăng nhập',
-        message: 'Vui lòng đăng nhập để gửi phản hồi.',
+        header: 'Lỗi',
+        message: validation.message,
         buttons: ['OK']
       });
       await alert.present();
       return;
     }
 
-    const headers = new HttpHeaders({
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Bearer ${token}`,
-      'Accept': 'application/json'
-    });
-
-    const body = new URLSearchParams();
-    body.set('rank', this.rating.toString());
-    body.set('message', this.feedbackText);
+    this.isSubmitting = true;
 
     try {
-      await this.http.post('https://mymaps-app.onrender.com/user/feedback', body.toString(), { headers }).toPromise();
+      const response = await firstValueFrom(this.feedbackService.submitFeedback(feedbackData));
 
       const alert = await this.alertCtrl.create({
         header: 'Thành công',
-        message: 'Phản hồi của bạn đã được gửi.',
+        message: 'Phản hồi của bạn đã được gửi thành công!',
         buttons: ['OK']
       });
       await alert.present();
 
       await this.modalCtrl.dismiss({
-        rating: this.rating,
-        feedback: this.feedbackText
+        id: this.id,
+        star: this.star,
+        desc: this.desc
       });
 
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error submitting feedback:', error);
+      
+      let errorMessage = 'Không gửi được phản hồi. Vui lòng thử lại sau.';
+      
+      if (error.status === 401 || error.status === 403) {
+        errorMessage = 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+      } else if (error.status === 400) {
+        errorMessage = 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.';
+      } else if (error.status === 500) {
+        errorMessage = 'Lỗi server. Vui lòng thử lại sau.';
+      } else if (error.status === 0) {
+        errorMessage = 'Lỗi kết nối mạng. Vui lòng kiểm tra internet và thử lại.';
+      }
+
       const alert = await this.alertCtrl.create({
         header: 'Lỗi',
-        message: 'Không gửi được phản hồi. Vui lòng thử lại sau.',
+        message: errorMessage,
         buttons: ['OK']
       });
       await alert.present();
-      console.error('Error submitting feedback:', error);
+    } finally {
+      this.isSubmitting = false;
     }
   }
 

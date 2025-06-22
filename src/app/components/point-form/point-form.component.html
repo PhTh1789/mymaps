@@ -3,10 +3,13 @@
     <ion-label position="stacked">Tên điểm <span style="color: #ff4444">*</span></ion-label>
     <ion-input formControlName="name" type="text" placeholder="Nhập tên điểm" required></ion-input>
   </ion-item>
+  <div *ngIf="nameError" class="error-message">
+    <ion-text color="danger">{{ nameError }}</ion-text>
+  </div>
   
   <ion-item>
     <ion-label position="stacked">Mô tả</ion-label>
-    <ion-textarea formControlName="description" rows="3" placeholder="Nhập mô tả cho điểm"></ion-textarea>
+    <ion-textarea formControlName="description" rows="3" placeholder="Nhập mô tả cho điểm (không bắt buộc)"></ion-textarea>
   </ion-item>
 
   <ion-item class="image-upload-item">
@@ -21,9 +24,12 @@
   </ion-item>
 
   <ion-item>
-    <ion-label position="stacked">Tọa độ</ion-label>
+    <ion-label position="stacked">Tọa độ <span style="color: #ff4444">*</span></ion-label>
     <ion-input formControlName="geom" [readonly]="true" placeholder="Tọa độ sẽ được tự động điền"></ion-input>
   </ion-item>
+  <div *ngIf="geomError" class="error-message">
+    <ion-text color="danger">{{ geomError }}</ion-text>
+  </div>
 
   <ion-button expand="block" type="submit" [disabled]="loading">
     <ion-icon name="add-circle-outline" slot="start"></ion-icon>

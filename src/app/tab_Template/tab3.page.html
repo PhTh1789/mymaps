@@ -18,25 +18,25 @@
 <ion-content class="ion-padding">
 
 <!-- danh sách gợi ý -->
-  <ion-list *ngIf="showSuggestions && searchQuery" class="suggestions-list"> <!-- hiển thị danh sách khi thỏa cả 2 điều kiện -->
-    <ion-item *ngFor="let file of filteredFiles" button (click)="selectSuggestion(file)"> <!-- hiển thị danh sách những tài liệu thỏa từ khóa, khi chọn 1 tài liệu trong đó, sẽ gọi hàm selectSuggestion -->
+  <ion-list *ngIf="showSuggestions && searchQuery" class="suggestions-list">
+    <ion-item *ngFor="let file of filteredFiles" button (click)="selectSuggestion(file)">
       <ion-icon name="map-outline" slot="start"></ion-icon>
       <ion-label>
-        <h2>{{ file.map_name }}</h2>
-        <p>Owner: {{ file.user_name }}</p>
+        <h2>{{ file.name }}</h2>
+        <p>Tác giả: {{ file.author }}</p>
       </ion-label>
     </ion-item>
   </ion-list>
 
-  <!-- danh sách những tài liệu thỏa từ khóa tìm kiếm hiển thị trong phần content -->
+  <!-- danh sách những template thỏa từ khóa tìm kiếm hiển thị trong phần content -->
   <div class="documents-grid-container">
     <app-file-card
       *ngFor="let file of filteredFiles"
       [file]="file"
-      (deleted)="loadMaps()"
-      (reloadTabs)="loadMaps()">
+      (deleted)="loadTemplates()"
+      (reloadTabs)="loadTemplates()">
     </app-file-card>
-<!-- nếu filteredFiles.length = 0 nghĩa là không có tài liệu nào thỏa mãn từ khóa tìm kiếm -->
-    <p *ngIf="filteredFiles.length === 0">Không có tài liệu nào để hiển thị.</p>
+<!-- nếu filteredFiles.length = 0 nghĩa là không có template nào thỏa mãn từ khóa tìm kiếm -->
+    <p *ngIf="filteredFiles.length === 0">Không có template nào để hiển thị.</p>
   </div>
 </ion-content>

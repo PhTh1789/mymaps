@@ -29,9 +29,9 @@ export class BaseLayoutComponent implements OnInit {
   ) {};
 
   ngOnInit() {
-    this.avatarUrl = localStorage.getItem('user_avatar');
-    this.authService.username$.subscribe(name => {
-      this.username = name;
+    this.avatarUrl = this.authService.currentUserInfo?.avatar || 'assets/img/avatar.jpg';
+    this.authService.userInfo$.subscribe(userInfo => {
+      this.username = userInfo.username;
     });
   }
 
