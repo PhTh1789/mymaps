@@ -11,6 +11,7 @@ import { PointFormService } from '../services/point-form.service';
 import { AuthService } from '../services/auth.service';
 import { Geolocation } from '@capacitor/geolocation';
 import { CreatePointRequest } from '../services/map-api.service';
+import { ValidationService } from '../services/validation.service';
 
 interface SearchResult {
   display_name: string;
@@ -40,13 +41,14 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   searchResults: any[] = [];
   selectedMapId: number | null = null;
   selectedMapName: string = '';
-  selectedMapOwnerId: string = '';
+  selectedMapAuthorId: number | null = null;
   private pointMarkers: L.Marker[] = [];
   private mapIdSub?: Subscription;
   loadingPoint = false;
   loadingDelete = false;
   private routeControl: any = null;
   private markerToDelete: L.Marker | null = null;
+  userInfo: any = null;
 
   // Getter để expose service ra template
   get pointFormServiceInstance() {
@@ -61,7 +63,8 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     private pointFormService: PointFormService,
     private authService: AuthService,
     private alertController: AlertController,
-    private loadingController: LoadingController
+    private loadingController: LoadingController,
+    private validationService: ValidationService
   ) {}
 
   ngAfterViewInit() {
@@ -72,6 +75,16 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit() {
+    this.authService.getCurrentUserInfoNew().subscribe({
+      next: (user) => {
+        this.userInfo = user;
+      },
+      error: (err) => {
+        console.error('Không lấy được thông tin user:', err);
+        this.userInfo = null;
+      }
+    });
+
     this.mapIdSub = this.mapShareService.currentMapId$.subscribe((id) => {
       if (id) {
         this.selectedMapId = id;
@@ -189,7 +202,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
 
       const currentUserId = this.authService.currentUserInfo?.userId;
       const currentUserIdString = String(currentUserId);
-      const mapOwnerIdString = String(this.selectedMapOwnerId);
+      const mapOwnerIdString = String(this.selectedMapAuthorId);
       const hasPermission = currentUserIdString === mapOwnerIdString;
 
       if (!hasPermission) {
@@ -243,7 +256,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
               this.selectedMapId!,
               this.selectedMapName,
               geom,
-              this.selectedMapOwnerId
+              String(this.selectedMapAuthorId ?? '')
             );
             this.map.closePopup();
           });
@@ -379,7 +392,10 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     const mapId = this.pointFormServiceInstance.getSelectedMapId();
     const geom = this.pointFormServiceInstance.getSelectedGeom();
 
-    if (!mapId || !geom) return;
+    if (!mapId || !geom) {
+      console.error('Thiếu mapId hoặc geom');
+      return;
+    }
 
     this.loadingPoint = true;
 
@@ -391,25 +407,175 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
 
+    // Validate dữ liệu đầu vào
+    if (!data.name || data.name.trim().length === 0) {
+      console.error('Tên điểm không được để trống');
+      this.loadingPoint = false;
+      return;
+    }
+
+    // Lấy danh sách tên điểm hiện có trong map để kiểm tra trùng lặp
+    this.documentService.getMapPoints(mapIdInt).subscribe({
+      next: (existingPoints) => {
+        const existingPointNames = existingPoints.map(point => point.name);
+        
+        // Validate tên điểm với danh sách tên hiện có
+        const nameValidation = this.validationService.validatePointName(data.name, existingPointNames);
+        if (!nameValidation.isValid) {
+          this.loadingPoint = false;
+          const errorMessage = this.validationService.formatErrorMessage(nameValidation.errors);
+          this.showErrorMessage(errorMessage);
+          return;
+        }
+
+        // Validate description nếu có
+        if (data.description && data.description.trim().length > 0) {
+          const descValidation = this.validationService.validateDescription(data.description);
+          if (!descValidation.isValid) {
+            this.loadingPoint = false;
+            const errorMessage = this.validationService.formatErrorMessage(descValidation.errors);
+            this.showErrorMessage(errorMessage);
+            return;
+          }
+        }
+
+        // Validate geom
+        const geomValidation = this.validationService.validateGeom(geom);
+        if (!geomValidation.isValid) {
+          this.loadingPoint = false;
+          const errorMessage = this.validationService.formatErrorMessage(geomValidation.errors);
+          this.showErrorMessage(errorMessage);
+          return;
+        }
+
+        // Xử lý ảnh: chuyển từ File sang base64 string nếu có
+        let imageBase64: string | null = null;
+        if (data.image && data.image instanceof File) {
+          // Validate kích thước file trước khi đọc
+          if (data.image.size > 5 * 1024 * 1024) { // 5MB
+            this.loadingPoint = false;
+            this.showErrorMessage('Kích thước ảnh không được vượt quá 5MB');
+            return;
+          }
+
+          // Chuyển File thành base64
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+            const result = e.target.result as string;
+            // Loại bỏ prefix "data:image/jpeg;base64," để chỉ lấy phần base64
+            imageBase64 = result.split(',')[1];
+            
+            // Validate base64 image
+            const imageValidation = this.validationService.validateImage(imageBase64);
+            if (!imageValidation.isValid) {
+              this.loadingPoint = false;
+              const errorMessage = this.validationService.formatErrorMessage(imageValidation.errors);
+              this.showErrorMessage(errorMessage);
+              return;
+            }
+            
+            this.createPointWithData(mapIdInt, data, geom, imageBase64);
+          };
+          reader.onerror = () => {
+            console.error('Lỗi khi đọc file ảnh');
+            this.loadingPoint = false;
+            this.showErrorMessage('Lỗi khi đọc file ảnh. Vui lòng thử lại.');
+          };
+          reader.readAsDataURL(data.image);
+        } else if (data.image && typeof data.image === 'string') {
+          // Nếu đã là base64 string
+          imageBase64 = data.image;
+          
+          // Validate base64 image
+          if (imageBase64) {
+            const imageValidation = this.validationService.validateImage(imageBase64);
+            if (!imageValidation.isValid) {
+              this.loadingPoint = false;
+              const errorMessage = this.validationService.formatErrorMessage(imageValidation.errors);
+              this.showErrorMessage(errorMessage);
+              return;
+            }
+          }
+          
+          this.createPointWithData(mapIdInt, data, geom, imageBase64);
+        } else {
+          // Không có ảnh
+          this.createPointWithData(mapIdInt, data, geom, null);
+        }
+      },
+      error: (error) => {
+        console.error('Lỗi khi lấy danh sách điểm hiện có:', error);
+        this.loadingPoint = false;
+        this.showErrorMessage('Không thể kiểm tra tên điểm. Vui lòng thử lại.');
+      }
+    });
+  }
+
+  private createPointWithData(mapId: number, data: any, geom: string, imageBase64: string | null) {
     const pointData: CreatePointRequest = {
-      map_id: mapIdInt, // Sử dụng number thay vì string
-      name: data.name,
-      desc: data.description,
-      img: data.image,
-      geom: geom,
+      map_id: mapId,
+      name: data.name.trim(),
+      desc: data.description?.trim() || null,
+      img: imageBase64,
+      geom: geom.trim(),
     };
 
+    console.log('📤 Tạo điểm với dữ liệu:', {
+      map_id: pointData.map_id,
+      name: pointData.name,
+      desc: pointData.desc,
+      img: pointData.img ? 'Có ảnh (base64)' : 'Không có ảnh',
+      geom: pointData.geom
+    });
+
     this.mapService.createPoint(pointData).subscribe({
-      next: () => {
+      next: (response) => {
+        console.log('✅ Tạo điểm thành công:', response);
         this.loadingPoint = false;
         this.pointFormServiceInstance.hidePointForm();
         this.reloadMapPoints();
+        
+        // Hiển thị thông báo thành công
+        this.showSuccessMessage('Đã tạo điểm thành công!');
       },
       error: (error: any) => {
         this.loadingPoint = false;
-        console.error('Lỗi khi tạo điểm:', error);
+        console.error('❌ Lỗi khi tạo điểm:', error);
+        
+        // Hiển thị thông báo lỗi
+        let errorMessage = 'Không thể tạo điểm. Vui lòng thử lại.';
+        
+        if (error.message) {
+          errorMessage = error.message;
+        } else if (error.error?.detail) {
+          errorMessage = error.error.detail;
+        } else if (error.error?.message) {
+          errorMessage = error.error.message;
+        }
+        
+        this.showErrorMessage(errorMessage);
       },
     });
+  }
+
+  private async showSuccessMessage(message: string) {
+    const alert = await this.alertController.create({
+      header: 'Thành công',
+      message: message,
+      buttons: ['OK'],
+      cssClass: 'success-alert'
+    });
+    await alert.present();
+  }
+
+  private async showErrorMessage(message: string) {
+    const alert = await this.alertController.create({
+      header: 'Lỗi',
+      message: message,
+      buttons: ['OK'],
+      cssClass: 'error-alert'
+    });
+    await alert.present();
   }
 
   private reloadMapPoints() {
@@ -525,14 +691,14 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   loadMapName(mapId: number) {
     this.mapService.fetchUserMaps().subscribe({
       next: (maps: any[]) => {
-        const selectedMap = maps.find((map) => map.map_id === mapId);
+        const selectedMap = maps.find((map) => map.map_id === mapId || map.id === mapId);
         this.selectedMapName = selectedMap?.name || 'Bản đồ';
-        this.selectedMapOwnerId = selectedMap?.user_id || '';
+        this.selectedMapAuthorId = selectedMap?.author_id ?? null;
       },
       error: (error: any) => {
         console.error('Lỗi khi lấy tên map:', error);
         this.selectedMapName = 'Bản đồ';
-        this.selectedMapOwnerId = '';
+        this.selectedMapAuthorId = null;
       },
     });
   }
@@ -540,7 +706,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   clearSelectedMap() {
     this.selectedMapId = null;
     this.selectedMapName = '';
-    this.selectedMapOwnerId = '';
+    this.selectedMapAuthorId = null;
     this.clearPointMarkers();
   }
 
@@ -561,12 +727,8 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   }
 
   canCreatePoints(): boolean {
-    const currentUserId = this.authService.currentUserInfo?.userId;
-    const currentUserIdString = String(currentUserId);
-    const mapOwnerIdString = String(this.selectedMapOwnerId);
-    const canCreate = currentUserIdString === mapOwnerIdString;
-
-    return canCreate;
+    if (!this.userInfo || this.selectedMapAuthorId == null) return false;
+    return Number(this.userInfo.id) === Number(this.selectedMapAuthorId);
   }
 
   private drawRouteFromTo(
@@ -603,7 +765,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
   private canDeletePoint(point: MapPoint): boolean {
     const currentUserId = this.authService.currentUserInfo?.userId;
     const currentUserIdString = String(currentUserId);
-    const mapOwnerIdString = String(this.selectedMapOwnerId);
+    const mapOwnerIdString = String(this.selectedMapAuthorId);
     const canDelete = currentUserIdString === mapOwnerIdString;
 
     return canDelete;

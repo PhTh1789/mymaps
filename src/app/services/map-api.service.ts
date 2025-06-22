@@ -4,6 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError, tap, map } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { MAP_CONSTANTS } from '../constants/map.constants';
+import { ValidationService } from './validation.service';
 
 // Interfaces
 export interface MapItem {
@@ -67,7 +68,7 @@ export interface CreatePointRequest {
   map_id: number;
   name: string;
   desc?: string | null;
-  img?: File | null;
+  img?: string | null;
   geom: string;
 }
 
@@ -79,7 +80,8 @@ export class MapApiService {
 
   constructor(
     private http: HttpClient,
-    private authService: AuthService
+    private authService: AuthService,
+    private validationService: ValidationService
   ) {}
 
   private getAuthHeaders(): HttpHeaders {
@@ -109,14 +111,29 @@ export class MapApiService {
       'Accept': 'application/json'
     });
     
+    // Validate tên map trước khi gửi request
+    const nameValidation = this.validationService.validateMapName(mapData.name);
+    if (!nameValidation.isValid) {
+      const errorMessage = this.validationService.formatErrorMessage(nameValidation.errors);
+      return throwError(() => new Error(errorMessage));
+    }
+    
+    // Sanitize dữ liệu
+    const sanitizedName = this.validationService.sanitizeString(mapData.name);
+    
     // Chỉ gửi name bắt buộc và các trường khác nếu có giá trị
     const jsonData: any = {
-      name: mapData.name
+      name: sanitizedName
     };
     
     // Chỉ thêm các trường có giá trị và không rỗng
     if (mapData.desc !== undefined && mapData.desc !== null && mapData.desc.trim() !== '') {
-      jsonData.desc = mapData.desc.trim();
+      const descValidation = this.validationService.validateDescription(mapData.desc);
+      if (!descValidation.isValid) {
+        const errorMessage = this.validationService.formatErrorMessage(descValidation.errors);
+        return throwError(() => new Error(errorMessage));
+      }
+      jsonData.desc = this.validationService.sanitizeString(mapData.desc);
     }
     
     if (mapData.img !== undefined && mapData.img !== null && mapData.img.trim() !== '') {
@@ -124,12 +141,14 @@ export class MapApiService {
     }
     
     if (mapData.category !== undefined && mapData.category !== null && mapData.category.trim() !== '') {
-      jsonData.category = mapData.category.trim();
+      jsonData.category = this.validationService.sanitizeString(mapData.category);
     }
     
     if (mapData.share !== undefined && mapData.share !== null) {
       jsonData.share = mapData.share;
     }
+    
+    console.log('📤 Gửi request tạo map:', jsonData);
     
     return this.http.post(`${this.apiUrl}${MAP_CONSTANTS.ENDPOINTS.MAPS}`, jsonData, { headers }).pipe(
       catchError((error: HttpErrorResponse) => {
@@ -139,7 +158,21 @@ export class MapApiService {
         if (error.status === 0) {
           return throwError(() => new Error('Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet và thử lại.'));
         } else if (error.status === 400) {
-          return throwError(() => new Error('Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.'));
+          let errorMessage = 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.';
+          if (error.error?.detail) {
+            errorMessage = error.error.detail;
+          } else if (error.error?.message) {
+            errorMessage = error.error.message;
+          }
+          return throwError(() => new Error(errorMessage));
+        } else if (error.status === 422) {
+          let errorMessage = 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.';
+          if (error.error?.detail) {
+            errorMessage = error.error.detail;
+          } else if (error.error?.message) {
+            errorMessage = error.error.message;
+          }
+          return throwError(() => new Error(errorMessage));
         } else if (error.status === 500) {
           return throwError(() => new Error('Lỗi server. Vui lòng thử lại sau.'));
         }
@@ -263,22 +296,118 @@ export class MapApiService {
     );
   }
 
-  // hàm tạo điểm
+  // hàm tạo điểm với endpoint mới
   createPoint(pointData: CreatePointRequest): Observable<any> {
-    const headers = this.getAuthHeaders();
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${this.authService.getAccessToken()}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    });
+    
+    // Validate map_id
     const mapIdInt = parseInt(pointData.map_id.toString());
     if (isNaN(mapIdInt)) {
       return throwError(() => new Error('Map ID không hợp lệ. Phải là số nguyên.'));
     }
     
-    const formData = new FormData();
-    formData.append('map_id', mapIdInt.toString());
-    formData.append('name', pointData.name);
-    if (pointData.desc) formData.append('desc', pointData.desc);
-    if (pointData.img) formData.append('img', pointData.img);
-    formData.append('geom', pointData.geom);
+    // Validate tên point
+    const nameValidation = this.validationService.validatePointName(pointData.name);
+    if (!nameValidation.isValid) {
+      const errorMessage = this.validationService.formatErrorMessage(nameValidation.errors);
+      return throwError(() => new Error(errorMessage));
+    }
     
-    return this.http.post(`${this.apiUrl}${MAP_CONSTANTS.ENDPOINTS.POINTS}`, formData, { headers });
+    // Validate geom
+    const geomValidation = this.validationService.validateGeom(pointData.geom);
+    if (!geomValidation.isValid) {
+      const errorMessage = this.validationService.formatErrorMessage(geomValidation.errors);
+      return throwError(() => new Error(errorMessage));
+    }
+    
+    // Validate description nếu có
+    if (pointData.desc !== undefined && pointData.desc !== null && pointData.desc.trim() !== '') {
+      const descValidation = this.validationService.validateDescription(pointData.desc);
+      if (!descValidation.isValid) {
+        const errorMessage = this.validationService.formatErrorMessage(descValidation.errors);
+        return throwError(() => new Error(errorMessage));
+      }
+    }
+    
+    // Validate image nếu có
+    if (pointData.img !== undefined && pointData.img !== null && pointData.img.trim() !== '') {
+      const imageValidation = this.validationService.validateImage(pointData.img);
+      if (!imageValidation.isValid) {
+        const errorMessage = this.validationService.formatErrorMessage(imageValidation.errors);
+        return throwError(() => new Error(errorMessage));
+      }
+    }
+    
+    // Sanitize dữ liệu
+    const sanitizedName = this.validationService.sanitizeString(pointData.name);
+    const sanitizedDesc = pointData.desc ? this.validationService.sanitizeString(pointData.desc) : null;
+    const sanitizedGeom = this.validationService.sanitizeString(pointData.geom);
+    
+    // Tạo payload JSON
+    const payload: any = {
+      map_id: mapIdInt,
+      name: sanitizedName,
+      geom: sanitizedGeom
+    };
+    
+    // Chỉ thêm desc nếu có giá trị
+    if (sanitizedDesc) {
+      payload.desc = sanitizedDesc;
+    }
+    
+    // Chỉ thêm img nếu có giá trị (base64 string)
+    if (pointData.img !== undefined && pointData.img !== null && pointData.img.trim() !== '') {
+      payload.img = pointData.img.trim();
+    }
+    
+    console.log('📤 Gửi request tạo điểm:', {
+      map_id: payload.map_id,
+      name: payload.name,
+      desc: payload.desc ? 'Có mô tả' : 'Không có mô tả',
+      img: payload.img ? 'Có ảnh (base64)' : 'Không có ảnh',
+      geom: payload.geom
+    });
+    
+    return this.http.post(`${this.apiUrl}/point/`, payload, { headers }).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error('❌ Lỗi tạo điểm:', error.status, error.message);
+        
+        // Xử lý các loại lỗi cụ thể
+        if (error.status === 0) {
+          return throwError(() => new Error('Lỗi kết nối mạng. Vui lòng kiểm tra kết nối internet và thử lại.'));
+        } else if (error.status === 400) {
+          let errorMessage = 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.';
+          if (error.error?.detail) {
+            errorMessage = error.error.detail;
+          } else if (error.error?.message) {
+            errorMessage = error.error.message;
+          }
+          return throwError(() => new Error(errorMessage));
+        } else if (error.status === 401) {
+          return throwError(() => new Error('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.'));
+        } else if (error.status === 403) {
+          return throwError(() => new Error('Không có quyền tạo điểm trên bản đồ này.'));
+        } else if (error.status === 404) {
+          return throwError(() => new Error('Không tìm thấy bản đồ.'));
+        } else if (error.status === 422) {
+          let errorMessage = 'Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin.';
+          if (error.error?.detail) {
+            errorMessage = error.error.detail;
+          } else if (error.error?.message) {
+            errorMessage = error.error.message;
+          }
+          return throwError(() => new Error(errorMessage));
+        } else if (error.status === 500) {
+          return throwError(() => new Error('Lỗi server. Vui lòng thử lại sau.'));
+        }
+        
+        return throwError(() => new Error('Không thể tạo điểm. Vui lòng thử lại sau.'));
+      })
+    );
   }
 
   // hàm xóa điểm

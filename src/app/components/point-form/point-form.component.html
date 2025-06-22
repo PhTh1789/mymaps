@@ -1,5 +1,5 @@
 <form [formGroup]="pointForm" (ngSubmit)="onSubmit()" class="create-point-form">
-  <ion-item>
+  <ion-item [class.error-field]="hasFieldError('name')">
     <ion-label position="stacked">Tên điểm <span style="color: #ff4444">*</span></ion-label>
     <ion-input formControlName="name" type="text" placeholder="Nhập tên điểm" required></ion-input>
   </ion-item>
@@ -7,12 +7,15 @@
     <ion-text color="danger">{{ nameError }}</ion-text>
   </div>
   
-  <ion-item>
+  <ion-item [class.error-field]="hasFieldError('description')">
     <ion-label position="stacked">Mô tả</ion-label>
     <ion-textarea formControlName="description" rows="3" placeholder="Nhập mô tả cho điểm (không bắt buộc)"></ion-textarea>
   </ion-item>
+  <div *ngIf="descriptionError" class="error-message">
+    <ion-text color="danger">{{ descriptionError }}</ion-text>
+  </div>
 
-  <ion-item class="image-upload-item">
+  <ion-item class="image-upload-item" [class.error-field]="hasFieldError('image')">
     <ion-label position="stacked">Hình ảnh (không bắt buộc)</ion-label>
     <div class="file-input-wrapper">
       <label class="custom-file-input">
@@ -22,8 +25,11 @@
       </label>
     </div>
   </ion-item>
+  <div *ngIf="imageError" class="error-message">
+    <ion-text color="danger">{{ imageError }}</ion-text>
+  </div>
 
-  <ion-item>
+  <ion-item [class.error-field]="hasFieldError('geom')">
     <ion-label position="stacked">Tọa độ <span style="color: #ff4444">*</span></ion-label>
     <ion-input formControlName="geom" [readonly]="true" placeholder="Tọa độ sẽ được tự động điền"></ion-input>
   </ion-item>
@@ -31,7 +37,7 @@
     <ion-text color="danger">{{ geomError }}</ion-text>
   </div>
 
-  <ion-button expand="block" type="submit" [disabled]="loading">
+  <ion-button expand="block" type="submit" [disabled]="loading || !pointForm.valid || !hasNoValidationErrors()">
     <ion-icon name="add-circle-outline" slot="start"></ion-icon>
     {{ loading ? 'Đang tạo...' : 'Tạo điểm' }}
   </ion-button>

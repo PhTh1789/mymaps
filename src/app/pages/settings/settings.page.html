@@ -1,4 +1,3 @@
-
 <ion-header>
   <ion-toolbar>
     <ion-buttons slot="start">
@@ -31,8 +30,13 @@
     </ion-item>
   </ion-list>
 
-  <div class="danger-zone">
-    <ion-button expand="block" color="danger" (click)="confirmDeleteAccount()">
+  <div class="delete-account-section">
+    <ion-button 
+      expand="block" 
+      color="danger" 
+      (click)="confirmDeleteAccount()"
+      class="delete-account-btn">
+      <ion-icon name="trash-outline" slot="start"></ion-icon>
       Xóa tài khoản
     </ion-button>
   </div>

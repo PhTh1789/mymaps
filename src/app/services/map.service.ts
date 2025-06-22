@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, throwError } from 'rxjs';
-import { catchError, finalize } from 'rxjs/operators';
+import { catchError, finalize, map } from 'rxjs/operators';
 import { MapApiService, MapItem, CreateMapRequest, CreatePointRequest, TemplateItem } from './map-api.service';
+import { DocumentService } from './document.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +14,10 @@ export class MapService {
   private isLoadingSubject = new BehaviorSubject<boolean>(false);
   isLoading$ = this.isLoadingSubject.asObservable();
 
-  constructor(private mapApiService: MapApiService) {}
+  constructor(
+    private mapApiService: MapApiService,
+    private documentService: DocumentService
+  ) {}
 
   fetchUserMaps(): Observable<MapItem[]> {
     this.isLoadingSubject.next(true);
@@ -79,6 +83,24 @@ export class MapService {
     this.isLoadingSubject.next(true);
     return this.mapApiService.getTemplates().pipe(
       finalize(() => this.isLoadingSubject.next(false))
+    );
+  }
+
+  // Method để lấy danh sách tên map hiện có cho validation
+  getExistingMapNames(): Observable<string[]> {
+    return this.fetchUserMaps().pipe(
+      map(maps => maps.map(map => map.name))
+    );
+  }
+
+  // Method để lấy danh sách tên point hiện có trong một map
+  getExistingPointNames(mapId: number): Observable<string[]> {
+    return this.documentService.getMapPoints(mapId).pipe(
+      map(points => points.map(point => point.name)),
+      catchError((error) => {
+        console.error('Lỗi khi lấy danh sách tên point:', error);
+        return [[]];
+      })
     );
   }
 }

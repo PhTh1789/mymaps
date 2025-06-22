@@ -81,6 +81,12 @@ export class AuthApiService {
     });
   }
 
+  getCurrentUserInfo(token: string) {
+    return this.http.get<any>(`${this.apiUrl}/user/me`, {
+      headers: this.createAuthHeaders(token)
+    });
+  }
+
   getApiUrl(): string {
     return this.apiUrl;
   }

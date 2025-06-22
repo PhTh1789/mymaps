@@ -156,4 +156,11 @@ export class AuthService {
       })
     );
   }
+
+  // Lấy thông tin user theo định dạng mới từ /user/me
+  getCurrentUserInfoNew(): Observable<any> {
+    const token = this.getAccessToken();
+    if (!token) return throwError(() => new Error('Chưa đăng nhập'));
+    return this.authApiService.getCurrentUserInfo(token);
+  }
 }

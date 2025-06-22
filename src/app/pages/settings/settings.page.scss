@@ -1,24 +1,88 @@
 .settings-content {
   padding: 16px;
+  --background: rgb(235, 236, 228);
 
   ion-list {
     background: transparent;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 20px;
   }
 
   ion-item {
-    --background: transparent;
+    --background: rgb(239, 240, 222);
     border-radius: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
+    --border-color: transparent;
+    --padding-start: 16px;
+    --padding-end: 16px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
   }
 
-  .danger-zone {
+  .delete-account-section {
     margin-top: 40px;
     padding: 0 8px;
 
-    ion-button {
-      font-weight: bold;
+    .delete-account-btn {
+      --background: #dc3545;
+      --color: white;
+      --border-color: #dc3545;
+      --border-width: 0;
+      font-weight: 600;
       border-radius: 12px;
-      --box-shadow: none;
+      height: 48px;
+      --box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+      
+      &:hover {
+        --background: #c82333;
+        --box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+        transform: translateY(-1px);
+      }
+      
+      &:active {
+        --background: #bd2130;
+        transform: translateY(0);
+      }
+      
+      ion-icon {
+        color: white;
+        font-size: 18px;
+      }
+    }
+  }
+}
+
+/* Toast Notifications */
+.error-toast {
+  --background: #dc3545;
+  --color: white;
+  --border-radius: 8px;
+  --box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.success-toast {
+  --background: #28a745;
+  --color: white;
+  --border-radius: 8px;
+  --box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .settings-content {
+    padding: 12px;
+    
+    .delete-account-section {
+      padding: 0 4px;
+      margin-top: 30px;
+      
+      .delete-account-btn {
+        height: 44px;
+        font-size: 14px;
+      }
     }
   }
 }
