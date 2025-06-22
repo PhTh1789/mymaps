@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Tab2Page } from './tab2.page';
 import { ExploreContainerComponentModule } from '../explore-container/explore-container.module';
 import { HttpClientModule } from '@angular/common/http';
+import { SharedSearchBarComponent } from '../components/shared-search-bar/shared-search-bar.component';
 
 import { Tab2PageRoutingModule } from './tab2-routing.module';
 import { MymapsFileCardModule } from '../components/mymaps-file-card/mymaps-file-card.module';
@@ -18,7 +19,8 @@ import { MymapsFileCardModule } from '../components/mymaps-file-card/mymaps-file
     ExploreContainerComponentModule,
     Tab2PageRoutingModule,
     HttpClientModule,
-    MymapsFileCardModule
+    MymapsFileCardModule,
+    SharedSearchBarComponent
   ],
   declarations: [Tab2Page]
 })

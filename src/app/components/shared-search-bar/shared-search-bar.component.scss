@@ -1,0 +1,110 @@
+/* Search Container */
+.search-container {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  margin-top: 0;
+  background: rgb(239, 240, 222);
+  padding: 48px 8px 16px 8px;
+  min-height: 80px;
+}
+
+/* Avatar Menu Button */
+.menu-avatar {
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  flex-shrink: 0;
+  
+  img {
+    border-radius: 50%;
+    border: 2px solid white;
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+/* Search Bar */
+ion-searchbar {
+  --background: rgb(255, 255, 255);
+  --color: black;
+  --placeholder-color: rgb(38, 38, 38);
+  --border-radius: 20px;
+  --box-shadow: none;
+  height: 55px;
+  flex: 1;
+  margin-left: 12px;
+  padding: 0;
+}
+
+/* Suggestions List */
+.suggestions-list {
+  background: rgb(239, 240, 222);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 8px;
+  z-index: 1000;
+  position: relative;
+
+  ion-item {
+    --background: transparent;
+    --padding-start: 16px;
+    --padding-end: 16px;
+
+    ion-icon {
+      color: rgb(0, 0, 0);
+      margin-right: 12px;
+    }
+
+    ion-label {
+      h2 {
+        color: rgb(0, 0, 0);
+        font-weight: 500;
+        margin-bottom: 4px;
+      }
+
+      p {
+        color: rgb(38, 38, 38);
+        font-size: 14px;
+        margin: 2px 0;
+      }
+    }
+  }
+}
+
+/* Responsive Adjustments for Mobile */
+@media (max-width: 767px) {
+  .search-container {
+    padding: 32px 8px 12px 8px;
+    min-height: 70px;
+  }
+
+  ion-searchbar {
+    margin-left: 8px;
+    height: 50px;
+  }
+
+  .menu-avatar {
+    width: 35px;
+    height: 35px;
+  }
+}
+
+/* Responsive Adjustments for Small Mobile */
+@media (max-width: 480px) {
+  .search-container {
+    padding: 28px 6px 10px 6px;
+    min-height: 65px;
+  }
+
+  ion-searchbar {
+    margin-left: 6px;
+    height: 48px;
+  }
+
+  .menu-avatar {
+    width: 32px;
+    height: 32px;
+  }
+} 

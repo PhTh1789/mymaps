@@ -102,8 +102,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     await this.menuCtrl.open();
   }
 
-  async onSearchChange(event: any) {
-    const query = event.detail.value;
+  async onSearchChange(query: string) {
     if (query && query.length > 3) {
       try {
         const response = await fetch(
@@ -157,6 +156,7 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
 
     this.map.setView(adjustedLatLng, 16, {});
     this.searchResults = [];
+    this.searchQuery = location.display_name;
   }
 
   clearSearch() {

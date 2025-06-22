@@ -1,33 +1,16 @@
 <ion-header>
-  <div class="search-container">
-    <!-- mở/tắt cái menu -->
-    <ion-avatar class="menu-avatar" (click)="openMenu()">
-      <img src="assets/img/avatar.jpg" />
-    </ion-avatar>
-    <ion-searchbar
-      [(ngModel)]="searchQuery"
-      (ionInput)="onSearchChange($event)"
-      (ionClear)="clearSearch()"
-      placeholder="Tìm kiếm bản đồ..."
-      animated="true"
-      showCancelButton="focus">
-    </ion-searchbar>
-  </div>
+  <app-shared-search-bar
+    [placeholder]="'Tìm kiếm bản đồ...'"
+    [searchQuery]="searchQuery"
+    [showSuggestions]="showSuggestions"
+    [suggestions]="filteredFiles"
+    (searchChange)="onSearchChange($event)"
+    (searchClear)="clearSearch()"
+    (suggestionSelect)="selectSuggestion($event)">
+  </app-shared-search-bar>
 </ion-header>
 
 <ion-content class="ion-padding">
-
-<!-- danh sách gợi ý -->
-  <ion-list *ngIf="showSuggestions && searchQuery" class="suggestions-list">
-    <ion-item *ngFor="let file of filteredFiles" button (click)="selectSuggestion(file)">
-      <ion-icon name="map-outline" slot="start"></ion-icon>
-      <ion-label>
-        <h2>{{ file.name }}</h2>
-        <p>Tác giả: {{ file.author }}</p>
-      </ion-label>
-    </ion-item>
-  </ion-list>
-
   <!-- danh sách những template thỏa từ khóa tìm kiếm hiển thị trong phần content -->
   <div class="documents-grid-container">
     <app-file-card

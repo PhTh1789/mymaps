@@ -10,6 +10,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
 import { TokenExpiredModalComponent } from './components/token-expired-modal/token-expired-modal.component';
+import { SharedSearchBarComponent } from './components/shared-search-bar/shared-search-bar.component';
 
 @NgModule({
   schemas: [CUSTOM_ELEMENTS_SCHEMA],
@@ -22,7 +23,8 @@ import { TokenExpiredModalComponent } from './components/token-expired-modal/tok
     FormsModule,     
     IonicModule,      
     HttpClientModule,
-    TokenExpiredModalComponent
+    TokenExpiredModalComponent,
+    SharedSearchBarComponent
   ],
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },

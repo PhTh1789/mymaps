@@ -205,11 +205,10 @@ export class Tab2Page implements OnInit, OnDestroy {
     this.filterMaps();
   }
 
-  onSearchChange(event: any) {
-    const query = event.detail.value?.toLowerCase() || '';
+  onSearchChange(query: string) {
     if (query.length > 0) {
       this.filteredMaps = this.maps.filter(map =>
-        map.name && map.name.toLowerCase().includes(query)
+        map.name && map.name.toLowerCase().includes(query.toLowerCase())
       );
     } else {
       this.filteredMaps = [...this.maps];

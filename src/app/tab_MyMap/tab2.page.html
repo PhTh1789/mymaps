@@ -1,19 +1,13 @@
 <ion-header [translucent]="true">
-  <div class="search-container">
-    <!-- mở/tắt cái menu -->
-    <ion-searchbar
-      [(ngModel)]="searchQuery"
-      (ionInput)="onSearchChange($event)"
-      (ionClear)="clearSearch()"
-      placeholder="Tìm kiếm bản đồ của bạn..."
-      animated="true"
-      showCancelButton="focus">
-    </ion-searchbar>
-  </div>
+  <app-shared-search-bar
+    [placeholder]="'Tìm kiếm bản đồ của bạn...'"
+    [searchQuery]="searchQuery"
+    (searchChange)="onSearchChange($event)"
+    (searchClear)="clearSearch()">
+  </app-shared-search-bar>
 
   <!-- Segment cho tất cả, tôi tạo, được chia sẻ -->
   <ion-toolbar>
-
     <ion-segment [(ngModel)]="segmentValue" (ionChange)="segmentChanged($event)">
       <ion-segment-button value="all">
         <ion-label>Tất cả</ion-label>

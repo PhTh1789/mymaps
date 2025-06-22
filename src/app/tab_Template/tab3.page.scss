@@ -1,79 +1,14 @@
 /* General Page Styles */
 ion-header {
     background: rgb(239, 240, 222);
-    padding: 24px 8px 8px 8px;
+    padding: 0;
     position: relative;
     box-shadow: none;
+    min-height: 80px;
 }
 
 ion-content {
     --background: rgb(235, 236, 228);
-}
-
-/* Search and Header Controls */
-.search-container {
-    display: flex;
-    align-items: center;
-    padding: 0 8px;
-    margin-top: 0;
-}
-
-.menu-avatar {
-    width: 35px;
-    height: 35px;
-    cursor: pointer;
-    flex-shrink: 0;
-    
-    img {
-        border-radius: 50%;
-        border: 2px solid white;
-        display: block;
-        width: 100%;
-        height: 100%;
-    }
-}
-
-ion-searchbar {
-    --background: rgb(255, 255, 255);
-    --color: black;
-    --placeholder-color: rgb(38, 38, 38);
-    --border-radius: 20px;
-    --box-shadow: none;
-    height: 50px;
-    flex: 1;
-    margin-left: 8px;
-    padding: 0;
-}
-
-.suggestions-list {
-    background: rgb(239, 240, 222);
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin: 8px;
-
-    ion-item {
-        --background: transparent;
-        --padding-start: 16px;
-        --padding-end: 16px;
-
-        ion-icon {
-            color: rgb(0, 0, 0);
-            margin-right: 12px;
-        }
-
-        ion-label {
-            h2 {
-                color: rgb(0, 0, 0);
-                font-weight: 500;
-                margin-bottom: 4px;
-            }
-
-            p {
-                color: rgb(38, 38, 38);
-                font-size: 14px;
-            }
-        }
-    }
 }
 
 /* Card Grid Layout */
@@ -86,37 +21,31 @@ ion-searchbar {
     p {
         color: rgb(0, 0, 0);
         text-align: center;
-        margin: 20px 0;
+        margin: 0;
         font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        height: 100%;
+        width: 100%;
+        grid-column: 1/-1;
     }
 }
 
 /* Responsive Adjustments for Mobile */
 @media (max-width: 767px) {
-    ion-header {
-        padding: 4px;
-    }
-
-    .search-container {
-        padding: 0 4px;
-    }
-
-    ion-searchbar {
-        margin-left: 4px;
-        height: 45px;
-    }
-
-    .menu-avatar {
-        width: 30px;
-        height: 30px;
-    }
-
     /* On mobile, use a single-column flex layout for cards */
     .documents-grid-container {
         display: flex;
         flex-direction: column;
         gap: 12px;
         padding: 12px;
+        
+        p {
+            min-height: 200px;
+            margin: 20px 0;
+        }
     }
 }
 

@@ -5,7 +5,6 @@ import { AuthService } from '../../services/auth.service';
 import { ContactPage } from '../../pages/contact/contact.page';
 import { FeedbackPage } from '../../pages/feedback/feedback.page';
 
-
 @Component({
   selector: 'app-base-layout',
   standalone: true,

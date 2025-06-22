@@ -6,6 +6,7 @@ import { Tab1Page } from './tab1.page';
 import { ExploreContainerComponentModule } from '../explore-container/explore-container.module';
 import { RouterModule } from '@angular/router';
 import { PointFormComponentModule } from '../components/point-form/point-form.module';
+import { SharedSearchBarComponent } from '../components/shared-search-bar/shared-search-bar.component';
 
 import { Tab1PageRoutingModule } from './tab1-routing.module';
 
@@ -18,7 +19,8 @@ import { Tab1PageRoutingModule } from './tab1-routing.module';
     ExploreContainerComponentModule,
     Tab1PageRoutingModule,
     RouterModule.forChild([{ path: '', component: Tab1Page }]),
-    PointFormComponentModule
+    PointFormComponentModule,
+    SharedSearchBarComponent
   ],
   declarations: [Tab1Page],
   exports: [Tab1Page]

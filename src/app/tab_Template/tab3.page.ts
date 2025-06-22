@@ -42,14 +42,14 @@ export class Tab3Page {
     });
   }
 
-  onSearchChange(event: any) {
-    this.searchQuery = event.detail.value.toLowerCase();
+  onSearchChange(query: string) {
+    this.searchQuery = query;
     this.showSuggestions = this.searchQuery.length > 0;
     
     // Lọc kết quả tìm kiếm bằng tên của template hoặc tên tác giả
     this.filteredFiles = this.files.filter(file =>
-      file.name.toLowerCase().includes(this.searchQuery) ||
-      file.author.toLowerCase().includes(this.searchQuery)
+      file.name.toLowerCase().includes(this.searchQuery.toLowerCase()) ||
+      file.author.toLowerCase().includes(this.searchQuery.toLowerCase())
     );
   }
 

@@ -1,0 +1,37 @@
+<div class="search-container">
+  <!-- Avatar để mở menu -->
+  <ion-avatar 
+    *ngIf="showAvatar" 
+    class="menu-avatar" 
+    (click)="openMenu()">
+    <img src="assets/img/avatar.jpg" alt="avatar" />
+  </ion-avatar>
+  
+  <!-- Search bar -->
+  <ion-searchbar
+    [(ngModel)]="searchQuery"
+    (ionInput)="onSearchChange($event)"
+    (ionClear)="onSearchClear()"
+    [placeholder]="placeholder"
+    animated="true"
+    showCancelButton="focus">
+  </ion-searchbar>
+</div>
+
+<!-- Suggestions list -->
+<ion-list *ngIf="showSuggestions && searchQuery && suggestions.length > 0" class="suggestions-list">
+  <ion-item 
+    *ngFor="let item of suggestions" 
+    button 
+    (click)="onSuggestionSelect(item)">
+    <ion-icon 
+      [name]="getSuggestionIcon(item)" 
+      slot="start">
+    </ion-icon>
+    <ion-label>
+      <h2>{{ item.name || item.display_name }}</h2>
+      <p *ngIf="item.author">Tác giả: {{ item.author }}</p>
+      <p *ngIf="item.description">{{ item.description }}</p>
+    </ion-label>
+  </ion-item>
+</ion-list> 

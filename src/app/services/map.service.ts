@@ -67,14 +67,6 @@ export class MapService {
     );
   }
 
-  // Method test để thử public map với các endpoint khác nhau
-  testPublicMap(mapId: string): Observable<any> {
-    this.isLoadingSubject.next(true);
-    return this.mapApiService.testPublicMap(mapId).pipe(
-      finalize(() => this.isLoadingSubject.next(false))
-    );
-  }
-
   createPoint(pointData: CreatePointRequest): Observable<any> {
     return this.mapApiService.createPoint(pointData);
   }
